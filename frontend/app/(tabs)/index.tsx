@@ -77,25 +77,38 @@ export default function HomeScreen() {
   const fetchStations = useCallback(async (lat?: number, lng?: number, rad?: number) => {
     setIsLoading(true);
     try {
-      let currentLocation = location;
+      // Default: Berlin
+      const DEFAULT_LAT = 52.520008;
+      const DEFAULT_LNG = 13.404954;
+
+      let useLat = lat || DEFAULT_LAT;
+      let useLng = lng || DEFAULT_LNG;
 
       if (lat && lng) {
-        currentLocation = { latitude: lat, longitude: lng };
-        setLocation(currentLocation);
-      } else if (!currentLocation) {
-        currentLocation = await requestLocation();
-        if (currentLocation) {
-          setLocation(currentLocation);
-        } else {
-          currentLocation = { latitude: 52.520008, longitude: 13.404954 };
-          setLocation(currentLocation);
+        setLocation({ latitude: lat, longitude: lng });
+      } else if (location) {
+        useLat = location.latitude;
+        useLng = location.longitude;
+      } else {
+        // Try to get real location
+        try {
+          const loc = await requestLocation();
+          if (loc) {
+            useLat = loc.latitude;
+            useLng = loc.longitude;
+            setLocation(loc);
+          } else {
+            setLocation({ latitude: DEFAULT_LAT, longitude: DEFAULT_LNG });
+          }
+        } catch {
+          setLocation({ latitude: DEFAULT_LAT, longitude: DEFAULT_LNG });
         }
       }
 
       const radius = rad || searchRadius;
       const response = await fuelApi.getNearbyStations(
-        currentLocation.latitude,
-        currentLocation.longitude,
+        useLat,
+        useLng,
         radius,
         'all',
         'dist'
