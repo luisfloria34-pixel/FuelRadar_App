@@ -5,85 +5,67 @@ FuelRadar ist eine Premium-Mobil-App, die Fahrern in Deutschland hilft, die best
 
 ## Tech Stack
 - **Frontend**: Expo (React Native) mit TypeScript, Expo Router
-- **Backend**: FastAPI (Python) mit PostgreSQL (SQLModel), Redis, APScheduler
+- **Backend**: FastAPI (Python)
 - **State Management**: Zustand
-- **Externe API**: Tankerkönig API für Echtzeit-Kraftstoffpreise
+- **Externe API**: Tankerkönig API für Echtzeit-Kraftstoffpreise, Nominatim für Geocoding
 - **Push**: Expo Push Notifications
 
 ## Design System
-- Background: #0A0A0B
-- Card: #14161A
-- Border: #2A2F38
-- Accent Green: #32D74B
-- Border Radius: 22px (RADIUS.xl)
-- Padding: 16-20px (SPACING.md/lg)
+- Background: #0A0A0B | Card: #14161A | Border: #2A2F38
+- Accent Green: #32D74B | Border Radius: 22px | Padding: 16-20px
 - Fuel Colors: Diesel (#3B82F6), E5 (#32D74B), E10 (#FF9F0A)
 
-## Implementiert (April 2026)
+## Implementiert
 
 ### P0 - Build & Core (DONE)
-- ✅ Build-Fehler behoben (SHADOWS.medium/small fehlten im Theme)
-- ✅ Frontend kompiliert und läuft fehlerfrei
+- ✅ Build-Fehler behoben (SHADOWS-Varianten)
+- ✅ Frontend kompiliert fehlerfrei
 
 ### P1 - Premium UI Redesign (DONE)
-- ✅ Home Screen: Premium-Design mit Greeting, Suchleiste, FuelSegmentedControl, RecommendationCard, PremiumStationCard
-- ✅ Karte Screen: Komplett auf Deutsch, Filter-Panel, Sortierung, Ranking-Badges
-- ✅ Alarme Screen: Preisalarme mit Modal, Kraftstoff-Auswahl, Zielpreis
-- ✅ Favoriten Screen: Premium-Cards mit Status-Badges
-- ✅ Station Detail: Große Preisdarstellung, Öffnungszeiten, Navigation, Alarm setzen
-- ✅ Einstellungen: Sprache (DE/EN), Kraftstoff-Präferenzen, Suchradius, Rechtliches
-- ✅ Komplett Deutsch: Kein englischer Text im UI
-- ✅ Konsistentes Theme mit RADIUS.xl (22px), SPACING.lg (20px), SHADOWS
+- ✅ Alle Screens auf Deutsch mit Premium dark Design
+- ✅ Home, Karte, Alarme, Favoriten, Station Detail, Einstellungen
 
-### P2 - Tankerkönig API Integration (DONE)
-- ✅ API-Key sicher in `/app/backend/.env` integriert (TANKERKOENIG_API_KEY)
-- ✅ End-to-End Datenfluss mit echten Tankstellenpreisen verifiziert
-- ✅ 259 echte Tankstellen in Berlin mit Live-Preisen (ARAL, Shell, TotalEnergies, etc.)
-- ✅ Route-Mismatches behoben: GET /stations/prices/list, fuel_type Alias
-- ✅ StationDetail Model für fehlende `dist` korrigiert
-- ✅ Alle 3 API-Endpoints funktional: nearby, detail, prices
+### P2 - Tankerkönig API (DONE)
+- ✅ API-Key sicher in Backend .env
+- ✅ E2E mit echten Daten (259+ Tankstellen, Live-Preise)
+
+### PLZ-Suche (DONE - April 2026)
+- ✅ Backend: `/api/geocode` Endpoint via OpenStreetMap Nominatim
+- ✅ PLZ oder Ortsname → Koordinaten → Tankstellen-Suche
+- ✅ Radius-Auswahl: 2 km, 5 km, 10 km (Standard), 25 km
+- ✅ Dynamischer Titel "Tankstellen in {PLZ} {Stadt}"
+- ✅ Location-Label unter Suchfeld
+- ✅ Integriert auf Home UND Karte Screen
+- ✅ Getestet mit Stuttgart (70173), München (80331), Frankfurt (60311)
 
 ## API Endpoints
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/health` | GET | Health Check |
-| `/api/stations/nearby` | GET | Tankstellen in der Nähe (params: lat, lng, rad, fuel_type, sort) |
+| `/api/geocode` | GET | PLZ/Ort → Koordinaten (Nominatim) |
+| `/api/stations/nearby` | GET | Tankstellen in der Nähe |
 | `/api/stations/{id}` | GET | Tankstellen-Details |
-| `/api/stations/prices/list` | GET | Preise für mehrere Stationen (param: ids) |
+| `/api/stations/prices/list` | GET | Preise für mehrere Stationen |
 
 ## Ausstehend
-- ⬜ Custom Map Pins mit Preisanzeige (z.B. "[1,64€]")
-- ⬜ Device-Registrierung (UUID + Push Token) testen
-- ⬜ PostgreSQL & Redis Anbindung für Produktion
+- ⬜ Custom Map Pins mit Preisanzeige
+- ⬜ Device-Registrierung (UUID + Push Token)
+- ⬜ PostgreSQL & Redis für Produktion
 
 ## Backlog
 - ⬜ User Authentication
-- ⬜ Premium Tier (Free vs Paid Alerts)
+- ⬜ Premium Tier (Free vs Paid)
 - ⬜ Preis-Historie Charts
 - ⬜ Routenplanung mit Tankstopps
-- ⬜ Home Screen Widget
+- ⬜ Preisvergleich teilen
 
 ## Architektur
 ```
 app/
 ├── backend/
-│   ├── app/
-│   │   ├── core/ (config, database, cache)
-│   │   ├── models/ (device, favorite, alert)
-│   │   ├── routes/ (stations, devices, alerts, favorites)
-│   │   ├── services/ (tankerkoenig, push_notifications)
-│   │   └── workers/ (alert_worker)
-│   └── server.py
+│   ├── app/ (core, models, routes, services, workers)
+│   └── server.py (includes /api/geocode endpoint)
 └── frontend/
-    ├── app/
-    │   ├── (tabs)/ (index, map, alerts, favorites, _layout)
-    │   ├── station/[id].tsx
-    │   ├── settings.tsx
-    │   └── onboarding.tsx
-    └── src/
-        ├── components/ (PremiumStationCard, etc.)
-        ├── constants/ (theme, translations)
-        ├── services/ (api)
-        ├── store/ (useStore)
-        └── types/
+    ├── app/ (tabs: index, map, alerts, favorites | station/[id], settings)
+    └── src/ (components: PLZSearchBar, PremiumStationCard, etc.)
 ```
