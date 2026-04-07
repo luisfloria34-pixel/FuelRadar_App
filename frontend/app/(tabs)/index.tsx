@@ -184,8 +184,9 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.greetingRow}>
-            <Text style={styles.greeting}>Guten Tag 👋</Text>
+            <Text style={styles.greeting} testID="home-greeting">Guten Tag 👋</Text>
             <TouchableOpacity
+              testID="settings-btn"
               style={styles.settingsButton}
               onPress={() => router.push('/settings')}
             >

@@ -10,7 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS } from '../src/constants/theme';
+import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../src/constants/theme';
 import { useStore } from '../src/store/useStore';
 import { FuelType } from '../src/types';
 import { Language } from '../src/constants/translations';
@@ -28,64 +28,36 @@ export default function SettingsScreen() {
     t,
   } = useStore();
 
-  const fuelOptions: { type: FuelType; label: string }[] = [
-    { type: 'diesel', label: 'Diesel' },
-    { type: 'e5', label: 'Super E5' },
-    { type: 'e10', label: 'Super E10' },
+  const fuelOptions: { type: FuelType; label: string; color: string }[] = [
+    { type: 'diesel', label: 'Diesel', color: COLORS.diesel },
+    { type: 'e5', label: 'Super E5', color: COLORS.e5 },
+    { type: 'e10', label: 'Super E10', color: COLORS.e10 },
   ];
 
   const radiusOptions = [5, 10, 15, 25];
 
   const handleResetOnboarding = async () => {
     await setHasSeenOnboarding(false);
-    Alert.alert(t('success'), t('onboardingReset'));
+    Alert.alert('Erfolg', 'Das Onboarding wird beim nächsten Start erneut angezeigt.');
   };
 
   const handleLanguageChange = async (lang: Language) => {
     await setLanguage(lang);
   };
 
-  const SettingItem = ({
-    icon,
-    title,
-    subtitle,
-    onPress,
-    rightElement,
-  }: {
-    icon: keyof typeof Ionicons.glyphMap;
-    title: string;
-    subtitle?: string;
-    onPress?: () => void;
-    rightElement?: React.ReactNode;
-  }) => (
-    <TouchableOpacity
-      style={styles.settingItem}
-      onPress={onPress}
-      disabled={!onPress}
-      activeOpacity={onPress ? 0.7 : 1}
-    >
-      <View style={styles.settingIcon}>
-        <Ionicons name={icon} size={22} color={COLORS.textSecondary} />
-      </View>
-      <View style={styles.settingContent}>
-        <Text style={styles.settingTitle}>{title}</Text>
-        {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
-      </View>
-      {rightElement || (
-        onPress && <Ionicons name="chevron-forward" size={20} color={COLORS.textMuted} />
-      )}
-    </TouchableOpacity>
-  );
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity
+          testID="settings-back-btn"
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
           <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.title}>{t('settings')}</Text>
-        <View style={styles.placeholder} />
+        <Text style={styles.headerTitle}>Einstellungen</Text>
+        <View style={styles.headerSpacer} />
       </View>
 
       <ScrollView
@@ -93,44 +65,26 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* Language Selection */}
+        {/* Language */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('language').toUpperCase()}</Text>
+          <Text style={styles.sectionTitle}>SPRACHE</Text>
           <View style={styles.card}>
-            <View style={styles.languageOptions}>
+            <View style={styles.languageRow}>
               <TouchableOpacity
-                style={[
-                  styles.languageOption,
-                  language === 'de' && styles.languageOptionActive,
-                ]}
+                testID="lang-de-btn"
+                style={[styles.langOption, language === 'de' && styles.langOptionActive]}
                 onPress={() => handleLanguageChange('de')}
               >
-                <Text style={styles.languageFlag}>🇩🇪</Text>
-                <Text
-                  style={[
-                    styles.languageOptionText,
-                    language === 'de' && styles.languageOptionTextActive,
-                  ]}
-                >
-                  Deutsch
-                </Text>
+                <Text style={styles.langFlag}>🇩🇪</Text>
+                <Text style={[styles.langText, language === 'de' && styles.langTextActive]}>Deutsch</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[
-                  styles.languageOption,
-                  language === 'en' && styles.languageOptionActive,
-                ]}
+                testID="lang-en-btn"
+                style={[styles.langOption, language === 'en' && styles.langOptionActive]}
                 onPress={() => handleLanguageChange('en')}
               >
-                <Text style={styles.languageFlag}>🇬🇧</Text>
-                <Text
-                  style={[
-                    styles.languageOptionText,
-                    language === 'en' && styles.languageOptionTextActive,
-                  ]}
-                >
-                  English
-                </Text>
+                <Text style={styles.langFlag}>🇬🇧</Text>
+                <Text style={[styles.langText, language === 'en' && styles.langTextActive]}>English</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -138,25 +92,27 @@ export default function SettingsScreen() {
 
         {/* Fuel Preferences */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('fuelPreferences').toUpperCase()}</Text>
+          <Text style={styles.sectionTitle}>KRAFTSTOFF</Text>
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>{t('defaultFuelType')}</Text>
-            <View style={styles.fuelOptions}>
+            <Text style={styles.cardLabel}>Bevorzugter Kraftstoff</Text>
+            <View style={styles.optionsRow}>
               {fuelOptions.map((option) => (
                 <TouchableOpacity
                   key={option.type}
+                  testID={`fuel-pref-${option.type}`}
                   style={[
                     styles.fuelOption,
-                    selectedFuelType === option.type && styles.fuelOptionActive,
+                    selectedFuelType === option.type && {
+                      backgroundColor: option.color + '20',
+                      borderColor: option.color,
+                    },
                   ]}
                   onPress={() => setSelectedFuelType(option.type)}
                 >
-                  <Text
-                    style={[
-                      styles.fuelOptionText,
-                      selectedFuelType === option.type && styles.fuelOptionTextActive,
-                    ]}
-                  >
+                  <Text style={[
+                    styles.fuelOptionText,
+                    selectedFuelType === option.type && { color: option.color },
+                  ]}>
                     {option.label}
                   </Text>
                 </TouchableOpacity>
@@ -165,27 +121,26 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* Search Settings */}
+        {/* Search Radius */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('searchSettings').toUpperCase()}</Text>
+          <Text style={styles.sectionTitle}>SUCHRADIUS</Text>
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>{t('searchRadius')}</Text>
-            <View style={styles.radiusOptions}>
+            <Text style={styles.cardLabel}>Umkreis für die Tankstellensuche</Text>
+            <View style={styles.optionsRow}>
               {radiusOptions.map((radius) => (
                 <TouchableOpacity
                   key={radius}
+                  testID={`radius-${radius}`}
                   style={[
                     styles.radiusOption,
                     searchRadius === radius && styles.radiusOptionActive,
                   ]}
                   onPress={() => setSearchRadius(radius)}
                 >
-                  <Text
-                    style={[
-                      styles.radiusOptionText,
-                      searchRadius === radius && styles.radiusOptionTextActive,
-                    ]}
-                  >
+                  <Text style={[
+                    styles.radiusText,
+                    searchRadius === radius && styles.radiusTextActive,
+                  ]}>
                     {radius} km
                   </Text>
                 </TouchableOpacity>
@@ -196,74 +151,104 @@ export default function SettingsScreen() {
 
         {/* General */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('general').toUpperCase()}</Text>
+          <Text style={styles.sectionTitle}>ALLGEMEIN</Text>
           <View style={styles.settingsCard}>
-            <SettingItem
+            <SettingRow
               icon="flag"
-              title={t('country')}
-              subtitle={t('germany')}
+              title="Land"
+              subtitle="Deutschland"
             />
           </View>
         </View>
 
-        {/* Legal / Rechtliches */}
+        {/* Legal */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{language === 'de' ? 'RECHTLICHES' : 'LEGAL'}</Text>
+          <Text style={styles.sectionTitle}>RECHTLICHES</Text>
           <View style={styles.settingsCard}>
-            <SettingItem
+            <SettingRow
               icon="document-text"
-              title={t('termsOfService')}
+              title="Nutzungsbedingungen"
               onPress={() => router.push('/nutzungsbedingungen')}
+              showChevron
             />
-            <SettingItem
+            <SettingRow
               icon="shield-checkmark"
-              title={t('privacyPolicy')}
+              title="Datenschutzerklärung"
               onPress={() => router.push('/datenschutz')}
+              showChevron
             />
-            <SettingItem
+            <SettingRow
               icon="code"
-              title={t('dataSource')}
-              subtitle="Tankerkönig / MTS-K"
+              title="Datenquelle"
+              subtitle="Tankerkönig / MTS-K (CC BY 4.0)"
             />
           </View>
         </View>
 
         {/* About */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('about').toUpperCase()}</Text>
+          <Text style={styles.sectionTitle}>ÜBER DIE APP</Text>
           <View style={styles.settingsCard}>
-            <SettingItem
+            <SettingRow
               icon="information-circle"
-              title={t('version')}
+              title="Version"
               subtitle="1.0.0"
             />
-          </View>
-        </View>
-
-        {/* Debug */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('debug').toUpperCase()}</Text>
-          <View style={styles.settingsCard}>
-            <SettingItem
+            <SettingRow
               icon="refresh"
-              title={t('resetOnboarding')}
-              subtitle={t('showWelcomeAgain')}
+              title="Onboarding zurücksetzen"
+              subtitle="Begrüßung erneut anzeigen"
               onPress={handleResetOnboarding}
+              showChevron
             />
           </View>
         </View>
 
-        {/* App Info */}
-        <View style={styles.appInfo}>
-          <View style={styles.logoContainer}>
+        {/* Footer */}
+        <View style={styles.footer}>
+          <View style={styles.logoCircle}>
             <Ionicons name="location" size={24} color={COLORS.accentGreen} />
           </View>
           <Text style={styles.appName}>FuelRadar</Text>
-          <Text style={styles.appTagline}>{t('tagline')}</Text>
-          <Text style={styles.copyright}>© 2025 Catalin Ionut Floria</Text>
+          <Text style={styles.tagline}>Live Kraftstoffpreise in Deutschland</Text>
+          <Text style={styles.copyright}>© 2026 FuelRadar</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function SettingRow({
+  icon,
+  title,
+  subtitle,
+  onPress,
+  showChevron,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle?: string;
+  onPress?: () => void;
+  showChevron?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      style={styles.settingRow}
+      onPress={onPress}
+      disabled={!onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
+      <View style={styles.settingIcon}>
+        <Ionicons name={icon} size={20} color={COLORS.textSecondary} />
+      </View>
+      <View style={styles.settingContent}>
+        <Text style={styles.settingTitle}>{title}</Text>
+        {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
+      </View>
+      {showChevron && (
+        <Ionicons name="chevron-forward" size={18} color={COLORS.textMuted} />
+      )}
+    </TouchableOpacity>
   );
 }
 
@@ -276,153 +261,141 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.sm,
   },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.md,
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.xl,
     backgroundColor: COLORS.cardBackground,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: '600',
+  headerTitle: {
+    ...TYPOGRAPHY.h3,
     color: COLORS.textPrimary,
   },
-  placeholder: {
-    width: 44,
+  headerSpacer: {
+    width: 48,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     paddingBottom: 50,
   },
   section: {
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.xl,
   },
   sectionTitle: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.textSecondary,
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     marginBottom: SPACING.sm,
     marginLeft: SPACING.xs,
   },
   card: {
     backgroundColor: COLORS.cardBackground,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   cardLabel: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    marginBottom: SPACING.sm,
+    marginBottom: SPACING.md,
   },
-  languageOptions: {
+  languageRow: {
     flexDirection: 'row',
+    gap: SPACING.sm,
   },
-  languageOption: {
+  langOption: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.sm + 4,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginRight: SPACING.sm,
   },
-  languageOptionActive: {
+  langOptionActive: {
     backgroundColor: COLORS.accentGreen + '20',
     borderColor: COLORS.accentGreen,
   },
-  languageFlag: {
+  langFlag: {
     fontSize: 20,
     marginRight: SPACING.sm,
   },
-  languageOptionText: {
-    fontSize: 14,
-    fontWeight: '500',
+  langText: {
+    fontSize: 15,
+    fontWeight: '600',
     color: COLORS.textSecondary,
   },
-  languageOptionTextActive: {
+  langTextActive: {
     color: COLORS.accentGreen,
   },
-  fuelOptions: {
+  optionsRow: {
     flexDirection: 'row',
+    gap: SPACING.sm,
   },
   fuelOption: {
     flex: 1,
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.sm + 2,
     alignItems: 'center',
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginRight: SPACING.sm,
-  },
-  fuelOptionActive: {
-    backgroundColor: COLORS.accentGreen + '20',
-    borderColor: COLORS.accentGreen,
   },
   fuelOptionText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.textSecondary,
-  },
-  fuelOptionTextActive: {
-    color: COLORS.accentGreen,
-  },
-  radiusOptions: {
-    flexDirection: 'row',
   },
   radiusOption: {
     flex: 1,
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.sm + 2,
     alignItems: 'center',
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginRight: SPACING.sm,
   },
   radiusOptionActive: {
     backgroundColor: COLORS.accentBlue + '20',
     borderColor: COLORS.accentBlue,
   },
-  radiusOptionText: {
+  radiusText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.textSecondary,
   },
-  radiusOptionTextActive: {
+  radiusTextActive: {
     color: COLORS.accentBlue,
   },
   settingsCard: {
     backgroundColor: COLORS.cardBackground,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: 'hidden',
   },
-  settingItem: {
+  settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: SPACING.md,
+    padding: SPACING.lg,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
   settingIcon: {
     width: 36,
     height: 36,
-    borderRadius: RADIUS.sm,
+    borderRadius: 18,
     backgroundColor: COLORS.cardSecondary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -433,6 +406,7 @@ const styles = StyleSheet.create({
   },
   settingTitle: {
     fontSize: 16,
+    fontWeight: '500',
     color: COLORS.textPrimary,
   },
   settingSubtitle: {
@@ -440,11 +414,11 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     marginTop: 2,
   },
-  appInfo: {
+  footer: {
     alignItems: 'center',
-    paddingVertical: SPACING.xl,
+    paddingVertical: SPACING.xxl,
   },
-  logoContainer: {
+  logoCircle: {
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -458,7 +432,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textPrimary,
   },
-  appTagline: {
+  tagline: {
     fontSize: 14,
     color: COLORS.textSecondary,
     marginTop: 4,

@@ -42,7 +42,7 @@ const styles = StyleSheet.create({
     marginHorizontal: SPACING.xs,
     borderWidth: 1,
     borderColor: COLORS.border,
-    ...SHADOWS.small,
+    ...SHADOWS.subtle,
   },
   iconContainer: {
     width: 48,

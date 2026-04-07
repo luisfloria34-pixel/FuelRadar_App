@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     height: Platform.OS === 'ios' ? 88 : 68,
     paddingTop: 8,
     paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-    ...SHADOWS.medium,
+    ...SHADOWS.card,
   },
   tabBarLabel: {
     fontSize: 11,

@@ -9,10 +9,12 @@ import {
   TextInput,
   Modal,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../../src/constants/theme';
+import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 import { Alert as AlertType, FuelType } from '../../src/types';
 
@@ -26,9 +28,9 @@ export default function AlertsScreen() {
   });
 
   const handleCreateAlert = async () => {
-    const price = parseFloat(newAlert.threshold_price);
+    const price = parseFloat(newAlert.threshold_price.replace(',', '.'));
     if (isNaN(price) || price <= 0) {
-      Alert.alert('Invalid Price', 'Please enter a valid price.');
+      Alert.alert('Ungültiger Preis', 'Bitte gib einen gültigen Preis ein.');
       return;
     }
 
@@ -45,11 +47,11 @@ export default function AlertsScreen() {
 
   const handleDeleteAlert = (alertId: string) => {
     Alert.alert(
-      'Delete Alert',
-      'Are you sure you want to delete this alert?',
+      'Alarm löschen',
+      'Möchtest du diesen Preisalarm wirklich löschen?',
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => removeAlert(alertId) },
+        { text: 'Abbrechen', style: 'cancel' },
+        { text: 'Löschen', style: 'destructive', onPress: () => removeAlert(alertId) },
       ]
     );
   };
@@ -69,8 +71,14 @@ export default function AlertsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Price Alerts</Text>
+        <View>
+          <Text style={styles.title} testID="alerts-title">Preisalarme</Text>
+          <Text style={styles.subtitle}>
+            {alerts.length > 0 ? `${alerts.length} aktive Alarme` : 'Werde benachrichtigt'}
+          </Text>
+        </View>
         <TouchableOpacity
+          testID="create-alert-btn"
           style={styles.addButton}
           onPress={() => setModalVisible(true)}
         >
@@ -86,33 +94,28 @@ export default function AlertsScreen() {
         {alerts.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}>
-              <Ionicons name="notifications-outline" size={48} color={COLORS.textMuted} />
+              <Ionicons name="notifications-outline" size={44} color={COLORS.textMuted} />
             </View>
-            <Text style={styles.emptyTitle}>No Alerts Yet</Text>
+            <Text style={styles.emptyTitle}>Noch keine Alarme</Text>
             <Text style={styles.emptySubtitle}>
-              Create price alerts to get notified when fuel prices drop below your target.
+              Erstelle Preisalarme und werde benachrichtigt, sobald Kraftstoffpreise unter deinen Zielpreis fallen.
             </Text>
             <TouchableOpacity
+              testID="create-first-alert-btn"
               style={styles.emptyButton}
               onPress={() => setModalVisible(true)}
             >
               <Ionicons name="add" size={20} color={COLORS.background} />
-              <Text style={styles.emptyButtonText}>Create Alert</Text>
+              <Text style={styles.emptyButtonText}>Alarm erstellen</Text>
             </TouchableOpacity>
           </View>
         ) : (
           alerts.map((alert) => (
-            <View key={alert.id} style={styles.alertCard}>
+            <View key={alert.id} style={styles.alertCard} testID={`alert-card-${alert.id}`}>
               <View style={styles.alertHeader}>
-                <View
-                  style={[
-                    styles.fuelBadge,
-                    { backgroundColor: fuelColors[alert.fuel_type] + '20' },
-                  ]}
-                >
-                  <Text
-                    style={[styles.fuelBadgeText, { color: fuelColors[alert.fuel_type] }]}
-                  >
+                <View style={[styles.fuelBadge, { backgroundColor: fuelColors[alert.fuel_type] + '20' }]}>
+                  <View style={[styles.fuelDot, { backgroundColor: fuelColors[alert.fuel_type] }]} />
+                  <Text style={[styles.fuelBadgeText, { color: fuelColors[alert.fuel_type] }]}>
                     {fuelLabels[alert.fuel_type]}
                   </Text>
                 </View>
@@ -125,23 +128,23 @@ export default function AlertsScreen() {
               </View>
 
               <View style={styles.alertContent}>
-                <View style={styles.priceTarget}>
-                  <Text style={styles.priceLabel}>Alert when below</Text>
-                  <Text style={styles.priceValue}>
-                    {alert.threshold_price.toFixed(3)} €
-                  </Text>
-                </View>
+                <Text style={styles.priceLabel}>Alarm wenn unter</Text>
+                <Text style={styles.priceValue}>
+                  {alert.threshold_price.toFixed(2).replace('.', ',')} €
+                </Text>
                 {alert.station_name && (
-                  <Text style={styles.stationName}>
+                  <View style={styles.stationRow}>
                     <Ionicons name="business" size={14} color={COLORS.textSecondary} />
-                    {' '}{alert.station_name}
-                  </Text>
+                    <Text style={styles.stationName}>{alert.station_name}</Text>
+                  </View>
                 )}
               </View>
 
               <TouchableOpacity
+                testID={`delete-alert-${alert.id}`}
                 style={styles.deleteButton}
                 onPress={() => handleDeleteAlert(alert.id)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons name="trash-outline" size={18} color={COLORS.accentRed} />
               </TouchableOpacity>
@@ -157,20 +160,30 @@ export default function AlertsScreen() {
         transparent
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalOverlay}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
           <View style={styles.modalContent}>
+            <View style={styles.modalHandle} />
+
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create Alert</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color={COLORS.textSecondary} />
+              <Text style={styles.modalTitle}>Neuer Preisalarm</Text>
+              <TouchableOpacity
+                testID="close-alert-modal"
+                onPress={() => setModalVisible(false)}
+                style={styles.modalCloseBtn}
+              >
+                <Ionicons name="close" size={22} color={COLORS.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.inputLabel}>Fuel Type</Text>
+            <Text style={styles.inputLabel}>Kraftstoffart</Text>
             <View style={styles.fuelOptions}>
               {(['diesel', 'e5', 'e10'] as FuelType[]).map((type) => (
                 <TouchableOpacity
                   key={type}
+                  testID={`fuel-option-${type}`}
                   style={[
                     styles.fuelOption,
                     newAlert.fuel_type === type && {
@@ -192,30 +205,38 @@ export default function AlertsScreen() {
               ))}
             </View>
 
-            <Text style={styles.inputLabel}>Target Price (€)</Text>
+            <Text style={styles.inputLabel}>Zielpreis (€)</Text>
             <TextInput
+              testID="alert-price-input"
               style={styles.input}
               value={newAlert.threshold_price}
               onChangeText={(text) => setNewAlert({ ...newAlert, threshold_price: text })}
-              placeholder="1.50"
+              placeholder="z.B. 1,50"
               placeholderTextColor={COLORS.textMuted}
               keyboardType="decimal-pad"
             />
 
-            <Text style={styles.inputLabel}>Station Name (Optional)</Text>
+            <Text style={styles.inputLabel}>Tankstelle (optional)</Text>
             <TextInput
+              testID="alert-station-input"
               style={styles.input}
               value={newAlert.station_name}
               onChangeText={(text) => setNewAlert({ ...newAlert, station_name: text })}
-              placeholder="Any station"
+              placeholder="Jede Tankstelle"
               placeholderTextColor={COLORS.textMuted}
             />
 
-            <TouchableOpacity style={styles.createButton} onPress={handleCreateAlert}>
-              <Text style={styles.createButtonText}>Create Alert</Text>
+            <TouchableOpacity
+              testID="submit-alert-btn"
+              style={styles.createButton}
+              onPress={handleCreateAlert}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="notifications" size={20} color={COLORS.background} />
+              <Text style={styles.createButtonText}>Alarm erstellen</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
   );
@@ -230,32 +251,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    ...TYPOGRAPHY.h1,
     color: COLORS.textPrimary,
   },
+  subtitle: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
   addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.md,
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.xl,
     backgroundColor: COLORS.accentGreen,
     alignItems: 'center',
     justifyContent: 'center',
+    ...SHADOWS.medium,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: 100,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: 120,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: SPACING.xxl,
+    paddingVertical: SPACING.xxxl,
   },
   emptyIcon: {
     width: 96,
@@ -265,10 +291,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    ...TYPOGRAPHY.h3,
     color: COLORS.textPrimary,
     marginBottom: SPACING.sm,
   },
@@ -277,30 +304,31 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center',
     paddingHorizontal: SPACING.xl,
-    lineHeight: 20,
+    lineHeight: 21,
     marginBottom: SPACING.lg,
   },
   emptyButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.accentGreen,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.sm + 4,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: RADIUS.xl,
   },
   emptyButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.background,
-    marginLeft: SPACING.xs,
+    marginLeft: SPACING.sm,
   },
   alertCard: {
     backgroundColor: COLORS.cardBackground,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.lg,
     marginBottom: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
   alertHeader: {
     flexDirection: 'row',
@@ -309,36 +337,52 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   fuelBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: RADIUS.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.sm + 2,
+    paddingVertical: 5,
+    borderRadius: RADIUS.md,
+  },
+  fuelDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
   },
   fuelBadgeText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
   alertContent: {},
-  priceTarget: {
-    marginBottom: SPACING.sm,
-  },
   priceLabel: {
     fontSize: 13,
     color: COLORS.textSecondary,
+    marginBottom: 4,
   },
   priceValue: {
-    fontSize: 28,
-    fontWeight: '700',
+    ...TYPOGRAPHY.priceLarge,
     color: COLORS.textPrimary,
   },
+  stationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.sm,
+  },
   stationName: {
-    fontSize: 13,
+    fontSize: 14,
     color: COLORS.textSecondary,
+    marginLeft: 6,
   },
   deleteButton: {
     position: 'absolute',
-    bottom: SPACING.md,
-    right: SPACING.md,
-    padding: SPACING.xs,
+    bottom: SPACING.lg,
+    right: SPACING.lg,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.accentRed + '15',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalOverlay: {
     flex: 1,
@@ -347,49 +391,68 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: COLORS.cardBackground,
-    borderTopLeftRadius: RADIUS.xl,
-    borderTopRightRadius: RADIUS.xl,
+    borderTopLeftRadius: RADIUS.xxl,
+    borderTopRightRadius: RADIUS.xxl,
     padding: SPACING.lg,
     paddingBottom: 50,
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: COLORS.border,
+    alignSelf: 'center',
+    marginBottom: SPACING.lg,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.xl,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    ...TYPOGRAPHY.h2,
     color: COLORS.textPrimary,
   },
+  modalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.cardSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   inputLabel: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '600',
     color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   fuelOptions: {
     flexDirection: 'row',
     marginBottom: SPACING.lg,
+    gap: SPACING.sm,
   },
   fuelOption: {
     flex: 1,
-    paddingVertical: SPACING.sm,
+    paddingVertical: SPACING.sm + 2,
     alignItems: 'center',
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginRight: SPACING.sm,
   },
   fuelOptionText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.textSecondary,
   },
   input: {
     backgroundColor: COLORS.cardSecondary,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
+    borderRadius: RADIUS.xl,
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
     fontSize: 16,
     color: COLORS.textPrimary,
     marginBottom: SPACING.lg,
@@ -397,14 +460,18 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
   },
   createButton: {
-    backgroundColor: COLORS.accentGreen,
-    borderRadius: RADIUS.md,
-    paddingVertical: SPACING.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.accentGreen,
+    borderRadius: RADIUS.xl,
+    paddingVertical: SPACING.md + 2,
+    ...SHADOWS.medium,
   },
   createButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.background,
+    marginLeft: SPACING.sm,
   },
 });

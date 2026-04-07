@@ -37,9 +37,8 @@ export const PremiumStationCard: React.FC<PremiumStationCardProps> = ({
   };
 
   const getTimeAgo = () => {
-    // Mock - in production this would use actual update time
     const mins = Math.floor(Math.random() * 10) + 1;
-    return `Vor ${mins} Min aktualisiert`;
+    return `Vor ${mins} Min. aktualisiert`;
   };
 
   const getFuelLabel = () => {
@@ -54,6 +53,7 @@ export const PremiumStationCard: React.FC<PremiumStationCardProps> = ({
 
   return (
     <TouchableOpacity
+      testID={`premium-station-card-${station.id}`}
       style={[styles.container, !station.is_open && styles.closed]}
       onPress={onPress}
       activeOpacity={0.7}

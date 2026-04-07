@@ -11,10 +11,9 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../../src/constants/theme';
+import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 import { fuelApi } from '../../src/services/api';
-import { Favorite } from '../../src/types';
 
 export default function FavoritesScreen() {
   const router = useRouter();
@@ -25,7 +24,6 @@ export default function FavoritesScreen() {
   useEffect(() => {
     const fetchPrices = async () => {
       if (favorites.length === 0) return;
-
       setLoading(true);
       try {
         const ids = favorites.map((f) => f.station_id);
@@ -39,18 +37,17 @@ export default function FavoritesScreen() {
         setLoading(false);
       }
     };
-
     fetchPrices();
   }, [favorites]);
 
   const handleRemoveFavorite = (stationId: string, stationName: string) => {
     Alert.alert(
-      'Remove Favorite',
-      `Remove ${stationName} from favorites?`,
+      'Favorit entfernen',
+      `${stationName} aus den Favoriten entfernen?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: 'Abbrechen', style: 'cancel' },
         {
-          text: 'Remove',
+          text: 'Entfernen',
           style: 'destructive',
           onPress: () => removeFavorite(stationId),
         },
@@ -58,19 +55,28 @@ export default function FavoritesScreen() {
     );
   };
 
-  const getPrice = (stationId: string) => {
-    const stationPrices = prices[stationId];
-    if (!stationPrices) return null;
-    return stationPrices[selectedFuelType];
+  const formatPrice = (price: number | null | undefined) => {
+    if (!price) return '—';
+    return price.toFixed(2).replace('.', ',') + ' €';
+  };
+
+  const fuelLabels: Record<string, string> = {
+    diesel: 'Diesel',
+    e5: 'E5',
+    e10: 'E10',
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.title}>Favorites</Text>
-        {favorites.length > 0 && (
-          <Text style={styles.count}>{favorites.length} stations</Text>
-        )}
+        <View>
+          <Text style={styles.title} testID="favorites-title">Favoriten</Text>
+          <Text style={styles.subtitle}>
+            {favorites.length > 0
+              ? `${favorites.length} gespeicherte Tankstellen`
+              : 'Deine Lieblingstankstellen'}
+          </Text>
+        </View>
       </View>
 
       <ScrollView
@@ -81,18 +87,20 @@ export default function FavoritesScreen() {
         {favorites.length === 0 ? (
           <View style={styles.emptyState}>
             <View style={styles.emptyIcon}>
-              <Ionicons name="heart-outline" size={48} color={COLORS.textMuted} />
+              <Ionicons name="heart-outline" size={44} color={COLORS.textMuted} />
             </View>
-            <Text style={styles.emptyTitle}>No Favorites Yet</Text>
+            <Text style={styles.emptyTitle}>Noch keine Favoriten</Text>
             <Text style={styles.emptySubtitle}>
-              Save your preferred stations for quick access to their current prices.
+              Speichere deine bevorzugten Tankstellen, um jederzeit schnell auf deren aktuelle Preise zuzugreifen.
             </Text>
             <TouchableOpacity
+              testID="explore-stations-btn"
               style={styles.exploreButton}
               onPress={() => router.push('/(tabs)/map')}
+              activeOpacity={0.8}
             >
-              <Ionicons name="map-outline" size={20} color={COLORS.background} />
-              <Text style={styles.exploreButtonText}>Explore Stations</Text>
+              <Ionicons name="compass-outline" size={20} color={COLORS.background} />
+              <Text style={styles.exploreButtonText}>Tankstellen entdecken</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -104,89 +112,83 @@ export default function FavoritesScreen() {
                 style={styles.loader}
               />
             )}
-            {favorites.map((favorite) => (
-              <TouchableOpacity
-                key={favorite.id}
-                style={styles.favoriteCard}
-                onPress={() => router.push(`/station/${favorite.station_id}`)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={styles.brandIcon}>
-                    <Ionicons name="business" size={20} color={COLORS.accentBlue} />
-                  </View>
-                  <View style={styles.stationInfo}>
-                    <Text style={styles.stationName} numberOfLines={1}>
-                      {favorite.station_name}
-                    </Text>
-                    <Text style={styles.stationBrand}>{favorite.station_brand}</Text>
-                  </View>
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => handleRemoveFavorite(favorite.station_id, favorite.station_name)}
-                  >
-                    <Ionicons name="heart" size={24} color={COLORS.accentRed} />
-                  </TouchableOpacity>
-                </View>
+            {favorites.map((favorite) => {
+              const stationPrices = prices[favorite.station_id];
+              const isOpen = stationPrices?.status === 'open';
 
-                <View style={styles.cardContent}>
-                  {prices[favorite.station_id] ? (
-                    <View style={styles.priceRow}>
-                      <View style={styles.priceItem}>
-                        <Text style={styles.priceLabel}>Diesel</Text>
-                        <Text style={styles.priceValue}>
-                          {prices[favorite.station_id].diesel?.toFixed(3) || 'N/A'}
-                        </Text>
-                      </View>
-                      <View style={styles.priceItem}>
-                        <Text style={styles.priceLabel}>E5</Text>
-                        <Text style={styles.priceValue}>
-                          {prices[favorite.station_id].e5?.toFixed(3) || 'N/A'}
-                        </Text>
-                      </View>
-                      <View style={styles.priceItem}>
-                        <Text style={styles.priceLabel}>E10</Text>
-                        <Text style={styles.priceValue}>
-                          {prices[favorite.station_id].e10?.toFixed(3) || 'N/A'}
-                        </Text>
-                      </View>
+              return (
+                <TouchableOpacity
+                  key={favorite.id}
+                  testID={`favorite-card-${favorite.id}`}
+                  style={styles.favoriteCard}
+                  onPress={() => router.push(`/station/${favorite.station_id}`)}
+                  activeOpacity={0.7}
+                >
+                  {/* Header */}
+                  <View style={styles.cardHeader}>
+                    <View style={styles.brandIcon}>
+                      <Ionicons name="business" size={20} color={COLORS.accentBlue} />
                     </View>
-                  ) : (
-                    <View style={styles.priceRow}>
-                      <Text style={styles.loadingText}>Loading prices...</Text>
-                    </View>
-                  )}
-                </View>
-
-                <View style={styles.cardFooter}>
-                  {prices[favorite.station_id] && (
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        prices[favorite.station_id].status === 'open'
-                          ? styles.openBadge
-                          : styles.closedBadge,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.statusText,
-                          prices[favorite.station_id].status === 'open'
-                            ? styles.openText
-                            : styles.closedText,
-                        ]}
-                      >
-                        {prices[favorite.station_id].status === 'open' ? 'Open' : 'Closed'}
+                    <View style={styles.stationInfo}>
+                      <Text style={styles.stationName} numberOfLines={1}>
+                        {favorite.station_name}
                       </Text>
+                      <Text style={styles.stationBrand}>{favorite.station_brand}</Text>
                     </View>
-                  )}
-                  <View style={styles.viewDetails}>
-                    <Text style={styles.viewDetailsText}>View Details</Text>
-                    <Ionicons name="chevron-forward" size={16} color={COLORS.accentBlue} />
+                    <TouchableOpacity
+                      testID={`remove-favorite-${favorite.id}`}
+                      style={styles.removeButton}
+                      onPress={() => handleRemoveFavorite(favorite.station_id, favorite.station_name)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <Ionicons name="heart" size={24} color={COLORS.accentRed} />
+                    </TouchableOpacity>
                   </View>
-                </View>
-              </TouchableOpacity>
-            ))}
+
+                  {/* Prices */}
+                  <View style={styles.pricesContainer}>
+                    {stationPrices ? (
+                      <View style={styles.priceRow}>
+                        {(['diesel', 'e5', 'e10'] as const).map((fuel) => (
+                          <View key={fuel} style={[
+                            styles.priceItem,
+                            selectedFuelType === fuel && styles.priceItemHighlighted,
+                          ]}>
+                            <Text style={styles.priceLabel}>{fuelLabels[fuel]}</Text>
+                            <Text style={[
+                              styles.priceValue,
+                              selectedFuelType === fuel && styles.priceValueHighlighted,
+                            ]}>
+                              {formatPrice(stationPrices[fuel])}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : (
+                      <View style={styles.priceRow}>
+                        <Text style={styles.loadingPriceText}>Preise laden...</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Footer */}
+                  <View style={styles.cardFooter}>
+                    {stationPrices && (
+                      <View style={[styles.statusBadge, isOpen ? styles.openBadge : styles.closedBadge]}>
+                        <View style={[styles.statusDot, { backgroundColor: isOpen ? COLORS.accentGreen : COLORS.accentRed }]} />
+                        <Text style={[styles.statusText, isOpen ? styles.openText : styles.closedText]}>
+                          {isOpen ? 'Geöffnet' : 'Geschlossen'}
+                        </Text>
+                      </View>
+                    )}
+                    <View style={styles.detailsLink}>
+                      <Text style={styles.detailsText}>Details</Text>
+                      <Ionicons name="chevron-forward" size={16} color={COLORS.accentGreen} />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </>
         )}
       </ScrollView>
@@ -200,34 +202,31 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    ...TYPOGRAPHY.h1,
     color: COLORS.textPrimary,
   },
-  count: {
-    fontSize: 14,
+  subtitle: {
+    fontSize: 15,
     color: COLORS.textSecondary,
+    marginTop: 2,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: 100,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: 120,
   },
   loader: {
     marginBottom: SPACING.md,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: SPACING.xxl,
+    paddingVertical: SPACING.xxxl,
   },
   emptyIcon: {
     width: 96,
@@ -237,10 +236,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
+    ...TYPOGRAPHY.h3,
     color: COLORS.textPrimary,
     marginBottom: SPACING.sm,
   },
@@ -249,31 +249,31 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     textAlign: 'center',
     paddingHorizontal: SPACING.xl,
-    lineHeight: 20,
+    lineHeight: 21,
     marginBottom: SPACING.lg,
   },
   exploreButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.accentBlue,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
-    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.accentGreen,
+    paddingVertical: SPACING.sm + 4,
+    paddingHorizontal: SPACING.xl,
+    borderRadius: RADIUS.xl,
   },
   exploreButtonText: {
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.background,
-    marginLeft: SPACING.xs,
+    marginLeft: SPACING.sm,
   },
   favoriteCard: {
     backgroundColor: COLORS.cardBackground,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.lg,
     marginBottom: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,
-    ...SHADOWS.small,
+    ...SHADOWS.card,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -281,19 +281,19 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   brandIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.cardSecondary,
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.accentBlue + '15',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.sm,
+    marginRight: SPACING.md,
   },
   stationInfo: {
     flex: 1,
   },
   stationName: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
     color: COLORS.textPrimary,
   },
@@ -305,30 +305,42 @@ const styles = StyleSheet.create({
   removeButton: {
     padding: SPACING.xs,
   },
-  cardContent: {
+  pricesContainer: {
     marginBottom: SPACING.md,
   },
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     backgroundColor: COLORS.cardSecondary,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.lg,
     padding: SPACING.md,
   },
   priceItem: {
     alignItems: 'center',
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.md,
+  },
+  priceItemHighlighted: {
+    backgroundColor: COLORS.accentGreen + '15',
   },
   priceLabel: {
     fontSize: 11,
+    fontWeight: '600',
     color: COLORS.textSecondary,
-    marginBottom: 2,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   priceValue: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
     color: COLORS.textPrimary,
   },
-  loadingText: {
+  priceValueHighlighted: {
+    color: COLORS.accentGreen,
+  },
+  loadingPriceText: {
     fontSize: 13,
     color: COLORS.textMuted,
   },
@@ -338,15 +350,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: RADIUS.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.sm + 2,
+    paddingVertical: 5,
+    borderRadius: RADIUS.md,
   },
   openBadge: {
-    backgroundColor: 'rgba(50, 215, 75, 0.15)',
+    backgroundColor: COLORS.accentGreen + '15',
   },
   closedBadge: {
-    backgroundColor: 'rgba(255, 69, 58, 0.15)',
+    backgroundColor: COLORS.accentRed + '15',
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    marginRight: 5,
   },
   statusText: {
     fontSize: 12,
@@ -358,13 +378,14 @@ const styles = StyleSheet.create({
   closedText: {
     color: COLORS.accentRed,
   },
-  viewDetails: {
+  detailsLink: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  viewDetailsText: {
-    fontSize: 13,
-    color: COLORS.accentBlue,
-    fontWeight: '500',
+  detailsText: {
+    fontSize: 14,
+    color: COLORS.accentGreen,
+    fontWeight: '600',
+    marginRight: 2,
   },
 });

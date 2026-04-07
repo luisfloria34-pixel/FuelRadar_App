@@ -21,25 +21,19 @@ export const StationCard: React.FC<StationCardProps> = ({
   const favorite = isFavorite(station.id);
 
   const getPrice = () => {
-    switch (selectedFuelType) {
-      case 'diesel':
-        return station.diesel;
-      case 'e5':
-        return station.e5;
-      case 'e10':
-        return station.e10;
-    }
+    return station[selectedFuelType];
   };
 
   const formatDistance = (dist: number) => {
     if (dist < 1) {
       return `${Math.round(dist * 1000)} m`;
     }
-    return `${dist.toFixed(1)} km`;
+    return `${dist.toFixed(1).replace('.', ',')} km`;
   };
 
   return (
     <TouchableOpacity
+      testID={`station-card-${station.id}`}
       style={[styles.container, !station.is_open && styles.closed]}
       onPress={onPress}
       activeOpacity={0.7}
@@ -82,7 +76,7 @@ export const StationCard: React.FC<StationCardProps> = ({
         </View>
         <View style={[styles.statusBadge, station.is_open ? styles.open : styles.closedBadge]}>
           <Text style={[styles.statusText, station.is_open ? styles.openText : styles.closedText]}>
-            {station.is_open ? 'Open' : 'Closed'}
+            {station.is_open ? 'Geöffnet' : 'Geschlossen'}
           </Text>
         </View>
       </View>
@@ -93,12 +87,12 @@ export const StationCard: React.FC<StationCardProps> = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: COLORS.cardBackground,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.lg,
     marginBottom: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,
-    ...SHADOWS.medium,
+    ...SHADOWS.card,
   },
   closed: {
     opacity: 0.6,
@@ -115,13 +109,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   brandIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.cardSecondary,
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.accentBlue + '15',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: SPACING.sm,
+    marginRight: SPACING.md,
   },
   brandInfo: {
     flex: 1,
@@ -163,15 +157,15 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   statusBadge: {
-    paddingHorizontal: SPACING.sm,
+    paddingHorizontal: SPACING.sm + 2,
     paddingVertical: 4,
-    borderRadius: RADIUS.sm,
+    borderRadius: RADIUS.md,
   },
   open: {
-    backgroundColor: 'rgba(50, 215, 75, 0.15)',
+    backgroundColor: COLORS.accentGreen + '15',
   },
   closedBadge: {
-    backgroundColor: 'rgba(255, 69, 58, 0.15)',
+    backgroundColor: COLORS.accentRed + '15',
   },
   statusText: {
     fontSize: 12,

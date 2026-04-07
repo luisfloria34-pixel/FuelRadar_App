@@ -4,29 +4,23 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
-  Platform,
   ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../../src/constants/theme';
+import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 import { fuelApi } from '../../src/services/api';
-import { FuelSelector } from '../../src/components/FuelSelector';
-import { StationCard } from '../../src/components/StationCard';
-import { Station, FuelType } from '../../src/types';
-
-const { width, height } = Dimensions.get('window');
+import { FuelSegmentedControl } from '../../src/components/FuelSegmentedControl';
+import { PremiumStationCard } from '../../src/components/PremiumStationCard';
+import { Station } from '../../src/types';
 
 const INITIAL_REGION = {
   latitude: 52.520008,
   longitude: 13.404954,
-  latitudeDelta: 0.1,
-  longitudeDelta: 0.1,
 };
 
 export default function MapScreen() {
@@ -37,10 +31,11 @@ export default function MapScreen() {
     stations,
     setStations,
     selectedFuelType,
-    selectedStation,
-    setSelectedStation,
     isLoading,
     setIsLoading,
+    isFavorite,
+    addFavorite,
+    removeFavorite,
   } = useStore();
 
   const [showFilters, setShowFilters] = useState(false);
@@ -75,17 +70,15 @@ export default function MapScreen() {
           setLocation(newLocation);
           fetchStations(newLocation.latitude, newLocation.longitude);
         } else {
-          // Use Berlin as default
-          setLocation({ latitude: INITIAL_REGION.latitude, longitude: INITIAL_REGION.longitude });
+          setLocation(INITIAL_REGION);
           fetchStations(INITIAL_REGION.latitude, INITIAL_REGION.longitude);
         }
       } catch (error) {
         console.error('Location error:', error);
-        setLocation({ latitude: INITIAL_REGION.latitude, longitude: INITIAL_REGION.longitude });
+        setLocation(INITIAL_REGION);
         fetchStations(INITIAL_REGION.latitude, INITIAL_REGION.longitude);
       }
     };
-
     initLocation();
   }, []);
 
@@ -108,9 +101,18 @@ export default function MapScreen() {
     return stations;
   };
 
-  const formatPrice = (price: number | null) => {
-    if (!price) return 'N/A';
-    return price.toFixed(3);
+  const handleFavoriteToggle = async (station: Station) => {
+    if (isFavorite(station.id)) {
+      await removeFavorite(station.id);
+    } else {
+      await addFavorite({
+        station_id: station.id,
+        station_name: station.name,
+        station_brand: station.brand,
+        lat: station.lat,
+        lng: station.lng,
+      });
+    }
   };
 
   const sortedStations = getSortedStations();
@@ -119,47 +121,53 @@ export default function MapScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Nearby Stations</Text>
+        <View>
+          <Text style={styles.title} testID="map-title">Tankstellen</Text>
+          <Text style={styles.subtitle}>in deiner Nähe</Text>
+        </View>
         <TouchableOpacity
-          style={styles.filterButton}
+          testID="filter-toggle-btn"
+          style={[styles.filterButton, showFilters && styles.filterButtonActive]}
           onPress={() => setShowFilters(!showFilters)}
         >
-          <Ionicons name="options" size={20} color={COLORS.textPrimary} />
+          <Ionicons name="options" size={20} color={showFilters ? COLORS.background : COLORS.textPrimary} />
         </TouchableOpacity>
       </View>
 
       {/* Filter Panel */}
       {showFilters && (
         <View style={styles.filterPanel}>
-          <Text style={styles.filterLabel}>Fuel Type</Text>
-          <FuelSelector />
-          
-          <Text style={[styles.filterLabel, { marginTop: SPACING.md }]}>Sort By</Text>
+          <Text style={styles.filterLabel}>Kraftstoffart</Text>
+          <FuelSegmentedControl />
+
+          <Text style={[styles.filterLabel, { marginTop: SPACING.lg }]}>Sortierung</Text>
           <View style={styles.sortOptions}>
             <TouchableOpacity
+              testID="sort-distance-btn"
               style={[styles.sortOption, sortBy === 'dist' && styles.sortOptionActive]}
               onPress={() => setSortBy('dist')}
             >
-              <Ionicons 
-                name="location" 
-                size={16} 
-                color={sortBy === 'dist' ? COLORS.accentGreen : COLORS.textSecondary} 
+              <Ionicons
+                name="location"
+                size={16}
+                color={sortBy === 'dist' ? COLORS.accentGreen : COLORS.textSecondary}
               />
               <Text style={[styles.sortOptionText, sortBy === 'dist' && styles.sortOptionTextActive]}>
-                Distance
+                Entfernung
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
+              testID="sort-price-btn"
               style={[styles.sortOption, sortBy === 'price' && styles.sortOptionActive]}
               onPress={() => setSortBy('price')}
             >
-              <Ionicons 
-                name="pricetag" 
-                size={16} 
-                color={sortBy === 'price' ? COLORS.accentGreen : COLORS.textSecondary} 
+              <Ionicons
+                name="pricetag"
+                size={16}
+                color={sortBy === 'price' ? COLORS.accentGreen : COLORS.textSecondary}
               />
               <Text style={[styles.sortOptionText, sortBy === 'price' && styles.sortOptionTextActive]}>
-                Price
+                Preis
               </Text>
             </TouchableOpacity>
           </View>
@@ -168,14 +176,14 @@ export default function MapScreen() {
 
       {/* Station Count */}
       <View style={styles.countRow}>
-        <Text style={styles.countText}>
-          {sortedStations.length} stations found
+        <Text style={styles.countText} testID="station-count">
+          {sortedStations.length} Tankstellen gefunden
         </Text>
         {location && (
-          <Text style={styles.locationText}>
+          <View style={styles.locationBadge}>
             <Ionicons name="location" size={12} color={COLORS.accentGreen} />
-            {' '}Near your location
-          </Text>
+            <Text style={styles.locationText}>In deiner Nähe</Text>
+          </View>
         )}
       </View>
 
@@ -183,7 +191,7 @@ export default function MapScreen() {
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.accentGreen} />
-          <Text style={styles.loadingText}>Finding stations...</Text>
+          <Text style={styles.loadingText}>Suche Tankstellen...</Text>
         </View>
       ) : (
         <ScrollView
@@ -193,36 +201,41 @@ export default function MapScreen() {
         >
           {sortedStations.map((station, index) => (
             <View key={station.id}>
-              {/* Rank badge for price sort */}
+              {/* Ranking Badge */}
               {sortBy === 'price' && index < 3 && (
                 <View style={[
                   styles.rankBadge,
-                  index === 0 && styles.rankBadgeGold,
-                  index === 1 && styles.rankBadgeSilver,
-                  index === 2 && styles.rankBadgeBronze,
+                  index === 0 && styles.rankGold,
+                  index === 1 && styles.rankSilver,
+                  index === 2 && styles.rankBronze,
                 ]}>
-                  <Ionicons 
-                    name={index === 0 ? 'trophy' : 'medal'} 
-                    size={12} 
-                    color={index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : '#CD7F32'} 
+                  <Ionicons
+                    name={index === 0 ? 'trophy' : 'medal'}
+                    size={13}
+                    color={index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : '#CD7F32'}
                   />
-                  <Text style={styles.rankText}>#{index + 1}</Text>
+                  <Text style={styles.rankText}>
+                    {index === 0 ? 'Günstigster Preis' : index === 1 ? '2. Platz' : '3. Platz'}
+                  </Text>
                 </View>
               )}
-              <StationCard
+              <PremiumStationCard
                 station={station}
                 onPress={() => router.push(`/station/${station.id}`)}
-                showAllPrices={true}
+                onFavoritePress={() => handleFavoriteToggle(station)}
+                isFavorite={isFavorite(station.id)}
               />
             </View>
           ))}
 
           {sortedStations.length === 0 && !isLoading && (
             <View style={styles.emptyState}>
-              <Ionicons name="search" size={48} color={COLORS.textMuted} />
-              <Text style={styles.emptyTitle}>No stations found</Text>
+              <View style={styles.emptyIcon}>
+                <Ionicons name="search" size={40} color={COLORS.textMuted} />
+              </View>
+              <Text style={styles.emptyTitle}>Keine Tankstellen gefunden</Text>
               <Text style={styles.emptySubtitle}>
-                Try adjusting your filters or search in a different area
+                Passe die Filter an oder suche in einer anderen Umgebung.
               </Text>
             </View>
           )}
@@ -241,32 +254,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.md,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    ...TYPOGRAPHY.h1,
     color: COLORS.textPrimary,
   },
+  subtitle: {
+    fontSize: 15,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
   filterButton: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.md,
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.xl,
     backgroundColor: COLORS.cardBackground,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  filterButtonActive: {
+    backgroundColor: COLORS.accentGreen,
+    borderColor: COLORS.accentGreen,
+  },
   filterPanel: {
-    marginHorizontal: SPACING.md,
+    marginHorizontal: SPACING.lg,
     backgroundColor: COLORS.cardBackground,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.lg,
     marginBottom: SPACING.md,
     borderWidth: 1,
     borderColor: COLORS.border,
+    ...SHADOWS.card,
   },
   filterLabel: {
     fontSize: 13,
@@ -278,17 +300,17 @@ const styles = StyleSheet.create({
   },
   sortOptions: {
     flexDirection: 'row',
+    gap: SPACING.sm,
   },
   sortOption: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: SPACING.sm,
-    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.sm + 2,
+    borderRadius: RADIUS.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginRight: SPACING.sm,
   },
   sortOptionActive: {
     backgroundColor: COLORS.accentGreen + '20',
@@ -307,16 +329,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.md,
+    paddingHorizontal: SPACING.lg,
     marginBottom: SPACING.sm,
   },
   countText: {
     fontSize: 14,
     color: COLORS.textSecondary,
   },
+  locationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   locationText: {
     fontSize: 12,
     color: COLORS.accentGreen,
+    marginLeft: 4,
+    fontWeight: '500',
   },
   loadingContainer: {
     flex: 1,
@@ -324,7 +352,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   loadingText: {
-    fontSize: 14,
+    fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: SPACING.md,
   },
@@ -332,49 +360,56 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: 100,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: 120,
   },
   rankBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: RADIUS.sm,
+    paddingHorizontal: SPACING.sm + 2,
+    paddingVertical: 5,
+    borderRadius: RADIUS.md,
     marginBottom: SPACING.xs,
-    backgroundColor: COLORS.cardSecondary,
   },
-  rankBadgeGold: {
+  rankGold: {
     backgroundColor: 'rgba(255, 215, 0, 0.15)',
   },
-  rankBadgeSilver: {
+  rankSilver: {
     backgroundColor: 'rgba(192, 192, 192, 0.15)',
   },
-  rankBadgeBronze: {
+  rankBronze: {
     backgroundColor: 'rgba(205, 127, 50, 0.15)',
   },
   rankText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '600',
     color: COLORS.textSecondary,
-    marginLeft: 4,
+    marginLeft: 5,
   },
   emptyState: {
     alignItems: 'center',
-    paddingVertical: SPACING.xxl,
+    paddingVertical: SPACING.xxxl,
+  },
+  emptyIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: COLORS.cardBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.lg,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    ...TYPOGRAPHY.h3,
     color: COLORS.textPrimary,
-    marginTop: SPACING.md,
+    marginBottom: SPACING.sm,
   },
   emptySubtitle: {
     fontSize: 14,
     color: COLORS.textSecondary,
     textAlign: 'center',
-    marginTop: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
+    lineHeight: 20,
   },
 });

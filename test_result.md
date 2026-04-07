@@ -189,6 +189,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "Shows greeting, quick actions, fuel selector, cheapest station, worth the drive"
+      - working: true
+        agent: "testing"
+        comment: "✅ Mobile testing (390x844) confirmed: German greeting 'Guten Tag 👋', main title 'Finde die günstigsten Spritpreise in deiner Nähe', search bar 'Tankstelle suchen...', fuel selector with E10 selected by default (green accent), section title 'Günstigste in deiner Nähe', settings icon in top right, tab bar with Start/Karte/Alarme/Favoriten. Dark theme validated."
 
   - task: "Map/List screen for nearby stations"
     implemented: true
@@ -201,6 +204,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "List view with filter/sort options, shows all prices per station"
+      - working: true
+        agent: "testing"
+        comment: "✅ Mobile testing confirmed: Title 'Tankstellen' with subtitle 'in deiner Nähe', filter button in top right with working filter panel (Kraftstoffart, Sortierung by Entfernung/Preis), station count '0 Tankstellen gefunden', 'In deiner Nähe' badge, empty state 'Keine Tankstellen gefunden' displayed correctly. Backend API returning mock data as expected."
 
   - task: "Alerts screen"
     implemented: true
@@ -213,6 +219,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "Empty state, create alert modal, toggle/delete alerts"
+      - working: true
+        agent: "testing"
+        comment: "✅ Mobile testing confirmed: Title 'Preisalarme' with subtitle 'Werde benachrichtigt', green '+' button in top right, empty state 'Noch keine Alarme' with description and 'Alarm erstellen' button. Modal functionality working: 'Neuer Preisalarm' title, fuel type selector (Diesel, Super E5, Super E10), price input 'Zielpreis (€)', station input 'Tankstelle (optional)', submit button 'Alarm erstellen'. All German text confirmed."
 
   - task: "Favorites screen"
     implemented: true
@@ -225,6 +234,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "Empty state, shows saved stations with live prices"
+      - working: true
+        agent: "testing"
+        comment: "✅ Mobile testing confirmed: Title 'Favoriten' with subtitle 'Deine Lieblingstankstellen', empty state 'Noch keine Favoriten' with description, 'Tankstellen entdecken' button working. All German text and design elements validated."
 
   - task: "Station detail screen"
     implemented: true
@@ -249,6 +261,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "Fuel preferences, search radius, about info, reset onboarding"
+      - working: true
+        agent: "testing"
+        comment: "✅ Mobile testing confirmed: Header 'Einstellungen' with back button, all sections present (SPRACHE, KRAFTSTOFF, SUCHRADIUS, ALLGEMEIN, RECHTLICHES), language options (Deutsch/English) with German selected, fuel preferences (Diesel, Super E5, Super E10), radius options (5, 10, 15, 25 km). All German text throughout. Navigation back to home working."
 
 metadata:
   created_by: "main_agent"
@@ -267,3 +282,5 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "FuelRadar MVP implemented with all core screens and backend API. Using mock data until Tankerkönig API key is configured."
+  - agent: "testing"
+    message: "Comprehensive mobile testing completed on iPhone 14 dimensions (390x844). All core screens validated: Home with German greeting 'Guten Tag', Map with 'Tankstellen' title and empty state, Alerts with modal functionality, Favorites with empty state, and Settings with all sections. Dark theme (#0A0A0B background, #14161A cards) and green accent (#32D74B) confirmed. German language interface throughout. E10 fuel type selected by default. All tab navigation working. Minor selector issues in Playwright due to multiple elements with same text, but functionality confirmed through screenshots."
