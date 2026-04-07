@@ -217,32 +217,14 @@ export default function MapScreen() {
           showsVerticalScrollIndicator={false}
         >
           {sortedStations.map((station, index) => (
-            <View key={station.id}>
-              {/* Ranking Badge */}
-              {sortBy === 'price' && index < 3 && (
-                <View style={[
-                  styles.rankBadge,
-                  index === 0 && styles.rankGold,
-                  index === 1 && styles.rankSilver,
-                  index === 2 && styles.rankBronze,
-                ]}>
-                  <Ionicons
-                    name={index === 0 ? 'trophy' : 'medal'}
-                    size={13}
-                    color={index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : '#CD7F32'}
-                  />
-                  <Text style={styles.rankText}>
-                    {index === 0 ? 'Günstigster Preis' : index === 1 ? '2. Platz' : '3. Platz'}
-                  </Text>
-                </View>
-              )}
               <PremiumStationCard
+                key={station.id}
                 station={station}
                 onPress={() => router.push(`/station/${station.id}`)}
                 onFavoritePress={() => handleFavoriteToggle(station)}
                 isFavorite={isFavorite(station.id)}
+                rank={sortBy === 'price' ? index : undefined}
               />
-            </View>
           ))}
 
           {sortedStations.length === 0 && !isLoading && (

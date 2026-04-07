@@ -283,6 +283,18 @@ frontend:
         agent: "testing"
         comment: "✅ COMPREHENSIVE PLZ SEARCH TESTING COMPLETE: All critical features verified on iPhone 14 (390x844). PLZ search bar with correct placeholder 'PLZ oder Ort eingeben', radius selector (2,5,10,25 km) with 10km default active, successful geocoding for Stuttgart (70173), München (80331), Frankfurt (60311). Dual PLZ inputs confirmed on Home and Karte tabs. Real station results showing brand names (ARAL, ESSO, AGIP), prices (2.14-2.20 EUR), distances (800m, 1.2km entfernt), update timestamps (Vor X Min. aktualisiert). Radius changes trigger new searches correctly. Station detail navigation functional. Found 159-166 stations per search. Backend geocoding via /api/geocode endpoint working with Nominatim. All German language interface confirmed. Station cards display all required elements correctly."
 
+  - task: "Premium Polish Update - Station Cards & Visual Hierarchy"
+    implemented: true
+    working: false
+    file: "src/components/PremiumStationCard.tsx"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUE: Home screen shows empty state - no station cards or LIVE-EMPFEHLUNG recommendation card displaying. ✅ PREMIUM STYLING CONFIRMED in Karte tab: Large prices (38px) with superscript last digit (e.g., '2,20⁹ €'), fuel type badges ('Super E10' in orange), colored fuel dots (orange before brand names), meta bars with distance + time + LIVE badge, heart icons for favorites, proper visual hierarchy with price as dominant element, section spacing and contrast, dark theme styling. ✅ KARTE TAB: 265 premium station cards with correct styling. ❌ HOME SCREEN DATA LOADING: Station cards and recommendation card not rendering on home screen despite API working (Tankerkönig API intermittent 503 errors observed). Premium polish styling implementation is correct but home screen data display is broken."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
@@ -291,9 +303,10 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Backend API endpoints"
-    - "Frontend screens navigation"
-  stuck_tasks: []
+    - "Premium Polish Update - Station Cards & Visual Hierarchy"
+    - "Home screen data loading issue"
+  stuck_tasks:
+    - "Premium Polish Update - Station Cards & Visual Hierarchy"
   test_all: false
   test_priority: "high_first"
 
@@ -306,3 +319,5 @@ agent_communication:
     message: "REAL DATA TESTING COMPLETE: Successfully tested FuelRadar app with live Tankerkönig API data. CONFIRMED: 259 real stations found, real brand names (ARAL, Shell, TotalEnergies), realistic prices (2.20-2.21 EUR), distance indicators (1.3 km entfernt), update timestamps (Vor X Min. aktualisiert). All core flows working: Home screen with recommendation card showing 'Spare 0,07 €/L', Karte tab with filter functionality (Kraftstoffart/Sortierung), Favorites and Alarme tabs functional. German language interface throughout. App successfully loads real data from Tankerkönig API - NO MOCK DATA. Station cards show live prices and status. Filter and sort functionality working. Mobile responsiveness confirmed on iPhone 14 dimensions."
   - agent: "testing"
     message: "PLZ SEARCH FEATURE TESTING COMPLETE: Comprehensive testing of PLZ search functionality on iPhone 14 (390x844) confirmed all critical features working. ✅ VERIFIED: PLZ search bar with correct placeholder 'PLZ oder Ort eingeben', radius selector (2,5,10,25 km) with 10km default, successful searches for Stuttgart (70173), München (80331), Frankfurt (60311), dual PLZ inputs on Home and Karte tabs, real station results with brand names (ARAL, ESSO, AGIP), prices (2.14-2.20 EUR), distances (800m, 1.2km entfernt), update timestamps (Vor X Min. aktualisiert), radius changes triggering new searches, station detail navigation working. Found 159-166 stations per search. All German language interface confirmed. PLZ geocoding via /api/geocode endpoint functional. Station cards display all required elements correctly."
+  - agent: "testing"
+    message: "PREMIUM POLISH TESTING COMPLETE: Tested FuelRadar premium polish update on iPhone 14 (390x844). ✅ CONFIRMED PREMIUM FEATURES: Large prices (38px) with superscript last digit (e.g., '2,20⁹ €'), fuel type badges ('Super E10' in orange), colored fuel dots (orange before brand names), meta bars with distance + time + LIVE badge, heart icons for favorites, proper visual hierarchy with price as dominant element, section spacing and contrast, dark theme styling. ✅ KARTE TAB: 265 premium station cards with correct styling, rank badges when sorted by price. ❌ CRITICAL ISSUE: Home screen shows empty state - no station cards or LIVE-EMPFEHLUNG recommendation card displaying. Premium styling works correctly in Karte tab but home screen data loading appears broken. Station detail navigation and premium price cards (32px+) with 'Alarm setzen' hints and 'Navigation starten' button confirmed working."

@@ -42,7 +42,7 @@ export default function HomeScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [cheapestStation, setCheapestStation] = useState<Station | null>(null);
-  const [savings, setSavings] = useState<string>('0,08 €/L');
+  const [avgPrice, setAvgPrice] = useState(0);
 
   useEffect(() => {
     initializeApp();
@@ -114,13 +114,10 @@ export default function HomeScreen() {
 
         if (sorted.length > 0) {
           setCheapestStation(sorted[0]);
-          
-          // Calculate savings compared to average
           const prices = sorted.map(s => s[selectedFuelType]).filter(p => p !== null) as number[];
           if (prices.length > 1) {
             const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
-            const savingsAmount = avg - prices[0];
-            setSavings(`${savingsAmount.toFixed(2).replace('.', ',')} €/L`);
+            setAvgPrice(avg);
           }
         }
       }
@@ -219,22 +216,21 @@ export default function HomeScreen() {
           <FuelSegmentedControl />
         </View>
 
-        {/* Divider */}
-        <View style={styles.divider} />
-
         {/* Recommendation Card */}
-        {cheapestStation && (
+        {cheapestStation && avgPrice > 0 && (
           <View style={styles.section}>
             <RecommendationCard
-              savings={savings}
-              distance={`${cheapestStation.dist.toFixed(1).replace('.', ',')} km`}
+              cheapestStation={cheapestStation}
+              averagePrice={avgPrice}
               onPress={() => router.push(`/station/${cheapestStation.id}`)}
             />
           </View>
         )}
 
-        {/* Divider */}
-        <View style={styles.divider} />
+        {/* Section Separator */}
+        <View style={styles.sectionSeparator}>
+          <View style={styles.separatorLine} />
+        </View>
 
         {/* Nearby Stations */}
         <View style={styles.section}>
@@ -310,12 +306,15 @@ const styles = StyleSheet.create({
     lineHeight: 34,
   },
   section: {
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.xl,
   },
-  divider: {
+  sectionSeparator: {
+    paddingVertical: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  separatorLine: {
     height: 1,
     backgroundColor: COLORS.border,
-    marginVertical: SPACING.md,
   },
   sectionHeader: {
     flexDirection: 'row',
