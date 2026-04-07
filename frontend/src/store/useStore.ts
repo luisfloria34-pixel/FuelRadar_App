@@ -2,8 +2,14 @@ import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { Station, FuelType, Alert, Favorite, Location } from '../types';
+import { translations, Language, TranslationKey } from '../constants/translations';
 
 interface AppState {
+  // Language
+  language: Language;
+  setLanguage: (lang: Language) => Promise<void>;
+  t: (key: TranslationKey) => string;
+  
   // Location
   location: Location | null;
   setLocation: (location: Location) => void;
@@ -44,24 +50,26 @@ interface AppState {
   // Loading state
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  
+  // Init
+  initializeApp: () => Promise<void>;
 }
 
 const FAVORITES_KEY = '@fuelradar_favorites';
 const ALERTS_KEY = '@fuelradar_alerts';
 const ONBOARDING_KEY = '@fuelradar_onboarding';
+const LANGUAGE_KEY = '@fuelradar_language';
 
 // Safe storage wrapper that handles web/native differences
 const safeStorage = {
   getItem: async (key: string): Promise<string | null> => {
     try {
       if (Platform.OS === 'web') {
-        // Use localStorage on web
         return localStorage.getItem(key);
       }
       return await AsyncStorage.getItem(key);
     } catch (error) {
       console.log('Storage getItem error:', error);
-      // Fallback to localStorage on web if AsyncStorage fails
       if (typeof localStorage !== 'undefined') {
         return localStorage.getItem(key);
       }
@@ -71,14 +79,12 @@ const safeStorage = {
   setItem: async (key: string, value: string): Promise<void> => {
     try {
       if (Platform.OS === 'web') {
-        // Use localStorage on web
         localStorage.setItem(key, value);
         return;
       }
       await AsyncStorage.setItem(key, value);
     } catch (error) {
       console.log('Storage setItem error:', error);
-      // Fallback to localStorage on web if AsyncStorage fails
       if (typeof localStorage !== 'undefined') {
         localStorage.setItem(key, value);
       }
@@ -87,6 +93,17 @@ const safeStorage = {
 };
 
 export const useStore = create<AppState>((set, get) => ({
+  // Language - German as default
+  language: 'de' as Language,
+  setLanguage: async (lang) => {
+    set({ language: lang });
+    await safeStorage.setItem(LANGUAGE_KEY, lang);
+  },
+  t: (key) => {
+    const lang = get().language;
+    return translations[lang][key] || translations.de[key] || key;
+  },
+  
   // Location
   location: null,
   setLocation: (location) => set({ location }),
@@ -191,4 +208,22 @@ export const useStore = create<AppState>((set, get) => ({
   // Loading state
   isLoading: false,
   setIsLoading: (loading) => set({ isLoading: loading }),
+  
+  // Initialize app - load all stored data
+  initializeApp: async () => {
+    try {
+      // Load language
+      const storedLang = await safeStorage.getItem(LANGUAGE_KEY);
+      if (storedLang && (storedLang === 'de' || storedLang === 'en')) {
+        set({ language: storedLang as Language });
+      }
+      
+      // Load other data
+      await get().loadOnboardingStatus();
+      await get().loadFavorites();
+      await get().loadAlerts();
+    } catch (error) {
+      console.log('Error initializing app:', error);
+    }
+  },
 }));

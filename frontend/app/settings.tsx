@@ -5,8 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
-  Linking,
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -15,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS } from '../src/constants/theme';
 import { useStore } from '../src/store/useStore';
 import { FuelType } from '../src/types';
+import { Language } from '../src/constants/translations';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -24,6 +23,9 @@ export default function SettingsScreen() {
     searchRadius,
     setSearchRadius,
     setHasSeenOnboarding,
+    language,
+    setLanguage,
+    t,
   } = useStore();
 
   const fuelOptions: { type: FuelType; label: string }[] = [
@@ -36,7 +38,11 @@ export default function SettingsScreen() {
 
   const handleResetOnboarding = async () => {
     await setHasSeenOnboarding(false);
-    Alert.alert('Success', 'Onboarding has been reset. Restart the app to see it again.');
+    Alert.alert(t('success'), t('onboardingReset'));
+  };
+
+  const handleLanguageChange = async (lang: Language) => {
+    await setLanguage(lang);
   };
 
   const SettingItem = ({
@@ -78,7 +84,7 @@ export default function SettingsScreen() {
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.title}>{t('settings')}</Text>
         <View style={styles.placeholder} />
       </View>
 
@@ -87,11 +93,54 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* Language Selection */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{t('language').toUpperCase()}</Text>
+          <View style={styles.card}>
+            <View style={styles.languageOptions}>
+              <TouchableOpacity
+                style={[
+                  styles.languageOption,
+                  language === 'de' && styles.languageOptionActive,
+                ]}
+                onPress={() => handleLanguageChange('de')}
+              >
+                <Text style={styles.languageFlag}>🇩🇪</Text>
+                <Text
+                  style={[
+                    styles.languageOptionText,
+                    language === 'de' && styles.languageOptionTextActive,
+                  ]}
+                >
+                  Deutsch
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.languageOption,
+                  language === 'en' && styles.languageOptionActive,
+                ]}
+                onPress={() => handleLanguageChange('en')}
+              >
+                <Text style={styles.languageFlag}>🇬🇧</Text>
+                <Text
+                  style={[
+                    styles.languageOptionText,
+                    language === 'en' && styles.languageOptionTextActive,
+                  ]}
+                >
+                  English
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
         {/* Fuel Preferences */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fuel Preferences</Text>
+          <Text style={styles.sectionTitle}>{t('fuelPreferences').toUpperCase()}</Text>
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Default Fuel Type</Text>
+            <Text style={styles.cardLabel}>{t('defaultFuelType')}</Text>
             <View style={styles.fuelOptions}>
               {fuelOptions.map((option) => (
                 <TouchableOpacity
@@ -118,9 +167,9 @@ export default function SettingsScreen() {
 
         {/* Search Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Search Settings</Text>
+          <Text style={styles.sectionTitle}>{t('searchSettings').toUpperCase()}</Text>
           <View style={styles.card}>
-            <Text style={styles.cardLabel}>Search Radius</Text>
+            <Text style={styles.cardLabel}>{t('searchRadius')}</Text>
             <View style={styles.radiusOptions}>
               {radiusOptions.map((radius) => (
                 <TouchableOpacity
@@ -147,57 +196,58 @@ export default function SettingsScreen() {
 
         {/* General */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>General</Text>
+          <Text style={styles.sectionTitle}>{t('general').toUpperCase()}</Text>
           <View style={styles.settingsCard}>
             <SettingItem
               icon="flag"
-              title="Country"
-              subtitle="Germany"
+              title={t('country')}
+              subtitle={t('germany')}
+            />
+          </View>
+        </View>
+
+        {/* Legal / Rechtliches */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{language === 'de' ? 'RECHTLICHES' : 'LEGAL'}</Text>
+          <View style={styles.settingsCard}>
+            <SettingItem
+              icon="document-text"
+              title={t('termsOfService')}
+              onPress={() => router.push('/nutzungsbedingungen')}
             />
             <SettingItem
-              icon="language"
-              title="Language"
-              subtitle="English"
+              icon="shield-checkmark"
+              title={t('privacyPolicy')}
+              onPress={() => router.push('/datenschutz')}
+            />
+            <SettingItem
+              icon="code"
+              title={t('dataSource')}
+              subtitle="Tankerkönig / MTS-K"
             />
           </View>
         </View>
 
         {/* About */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
+          <Text style={styles.sectionTitle}>{t('about').toUpperCase()}</Text>
           <View style={styles.settingsCard}>
             <SettingItem
               icon="information-circle"
-              title="Version"
+              title={t('version')}
               subtitle="1.0.0"
-            />
-            <SettingItem
-              icon="document-text"
-              title="Terms of Service"
-              onPress={() => Linking.openURL('https://creativecommons.tankerkoenig.de/')}
-            />
-            <SettingItem
-              icon="shield-checkmark"
-              title="Privacy Policy"
-              onPress={() => Linking.openURL('https://creativecommons.tankerkoenig.de/')}
-            />
-            <SettingItem
-              icon="code"
-              title="Data Source"
-              subtitle="Tankerkönig API"
-              onPress={() => Linking.openURL('https://creativecommons.tankerkoenig.de/')}
             />
           </View>
         </View>
 
         {/* Debug */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Debug</Text>
+          <Text style={styles.sectionTitle}>{t('debug').toUpperCase()}</Text>
           <View style={styles.settingsCard}>
             <SettingItem
               icon="refresh"
-              title="Reset Onboarding"
-              subtitle="Show welcome screens again"
+              title={t('resetOnboarding')}
+              subtitle={t('showWelcomeAgain')}
               onPress={handleResetOnboarding}
             />
           </View>
@@ -209,8 +259,8 @@ export default function SettingsScreen() {
             <Ionicons name="location" size={24} color={COLORS.accentGreen} />
           </View>
           <Text style={styles.appName}>FuelRadar</Text>
-          <Text style={styles.appTagline}>Live fuel prices in Germany</Text>
-          <Text style={styles.copyright}>© 2025 FuelRadar</Text>
+          <Text style={styles.appTagline}>{t('tagline')}</Text>
+          <Text style={styles.copyright}>© 2025 Catalin Ionut Floria</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -258,10 +308,9 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.lg,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: COLORS.textSecondary,
-    textTransform: 'uppercase',
     letterSpacing: 1,
     marginBottom: SPACING.sm,
     marginLeft: SPACING.xs,
@@ -277,6 +326,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textSecondary,
     marginBottom: SPACING.sm,
+  },
+  languageOptions: {
+    flexDirection: 'row',
+  },
+  languageOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.sm,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginRight: SPACING.sm,
+  },
+  languageOptionActive: {
+    backgroundColor: COLORS.accentGreen + '20',
+    borderColor: COLORS.accentGreen,
+  },
+  languageFlag: {
+    fontSize: 20,
+    marginRight: SPACING.sm,
+  },
+  languageOptionText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: COLORS.textSecondary,
+  },
+  languageOptionTextActive: {
+    color: COLORS.accentGreen,
   },
   fuelOptions: {
     flexDirection: 'row',

@@ -15,36 +15,36 @@ import { useStore } from '../src/store/useStore';
 
 const { width } = Dimensions.get('window');
 
-const slides = [
-  {
-    id: '1',
-    icon: 'search' as const,
-    title: 'Find Cheapest Fuel',
-    description: 'Discover the best fuel prices near your location in real-time.',
-    color: COLORS.accentGreen,
-  },
-  {
-    id: '2',
-    icon: 'map' as const,
-    title: 'Compare Instantly',
-    description: 'View all nearby stations on a map with live prices at a glance.',
-    color: COLORS.accentBlue,
-  },
-  {
-    id: '3',
-    icon: 'notifications' as const,
-    title: 'Price Drop Alerts',
-    description: 'Get notified when fuel prices drop below your target price.',
-    color: COLORS.accentOrange,
-  },
-];
-
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { setHasSeenOnboarding } = useStore();
+  const { setHasSeenOnboarding, t } = useStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
+
+  const slides = [
+    {
+      id: '1',
+      icon: 'search' as const,
+      title: t('onboarding1Title'),
+      description: t('onboarding1Desc'),
+      color: COLORS.accentGreen,
+    },
+    {
+      id: '2',
+      icon: 'map' as const,
+      title: t('onboarding2Title'),
+      description: t('onboarding2Desc'),
+      color: COLORS.accentBlue,
+    },
+    {
+      id: '3',
+      icon: 'notifications' as const,
+      title: t('onboarding3Title'),
+      description: t('onboarding3Desc'),
+      color: COLORS.accentOrange,
+    },
+  ];
 
   const handleNext = async () => {
     if (currentIndex < slides.length - 1) {
@@ -107,7 +107,7 @@ export default function OnboardingScreen() {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-        <Text style={styles.skipText}>Skip</Text>
+        <Text style={styles.skipText}>{t('skip')}</Text>
       </TouchableOpacity>
 
       <Animated.FlatList
@@ -138,7 +138,7 @@ export default function OnboardingScreen() {
           activeOpacity={0.8}
         >
           <Text style={styles.nextText}>
-            {currentIndex === slides.length - 1 ? 'Get Started' : 'Next'}
+            {currentIndex === slides.length - 1 ? t('getStarted') : t('next')}
           </Text>
           <Ionicons
             name={currentIndex === slides.length - 1 ? 'checkmark' : 'arrow-forward'}

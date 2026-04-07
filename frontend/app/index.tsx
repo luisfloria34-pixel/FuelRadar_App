@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Image } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING } from '../src/constants/theme';
@@ -7,7 +7,7 @@ import { useStore } from '../src/store/useStore';
 
 export default function SplashScreen() {
   const router = useRouter();
-  const { loadOnboardingStatus, hasSeenOnboarding, loadFavorites, loadAlerts } = useStore();
+  const { initializeApp } = useStore();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [scaleAnim] = useState(new Animated.Value(0.8));
 
@@ -29,11 +29,7 @@ export default function SplashScreen() {
 
     // Load data and navigate
     const init = async () => {
-      await Promise.all([
-        loadOnboardingStatus(),
-        loadFavorites(),
-        loadAlerts(),
-      ]);
+      await initializeApp();
       
       setTimeout(() => {
         const { hasSeenOnboarding } = useStore.getState();
@@ -68,7 +64,7 @@ export default function SplashScreen() {
           </View>
         </View>
         <Text style={styles.title}>FuelRadar</Text>
-        <Text style={styles.tagline}>Live fuel prices in Germany</Text>
+        <Text style={styles.tagline}>Live Kraftstoffpreise in Deutschland</Text>
       </Animated.View>
 
       <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>

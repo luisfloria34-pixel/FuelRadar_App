@@ -32,6 +32,8 @@ export default function HomeScreen() {
     selectedFuelType,
     isLoading,
     setIsLoading,
+    t,
+    initializeApp,
   } = useStore();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -40,10 +42,12 @@ export default function HomeScreen() {
   const [worthTheDrive, setWorthTheDrive] = useState<Station | null>(null);
 
   useEffect(() => {
+    initializeApp();
+    
     const hour = new Date().getHours();
-    if (hour < 12) setGreeting('Good morning');
-    else if (hour < 18) setGreeting('Good afternoon');
-    else setGreeting('Good evening');
+    if (hour < 12) setGreeting(t('goodMorning'));
+    else if (hour < 18) setGreeting(t('goodAfternoon'));
+    else setGreeting(t('goodEvening'));
   }, []);
 
   const requestLocation = async () => {
@@ -51,8 +55,8 @@ export default function HomeScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
-          'Location Required',
-          'FuelRadar needs location access to find nearby stations.',
+          'Standort erforderlich',
+          'FuelRadar benötigt Standortzugriff, um Tankstellen in der Nähe zu finden.',
           [{ text: 'OK' }]
         );
         return null;
@@ -119,7 +123,7 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error('Error fetching stations:', error);
-      Alert.alert('Error', 'Failed to fetch stations. Please try again.');
+      Alert.alert('Fehler', 'Tankstellen konnten nicht geladen werden.');
     } finally {
       setIsLoading(false);
     }
@@ -170,7 +174,7 @@ export default function HomeScreen() {
         <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>{greeting}</Text>
-            <Text style={styles.title}>Find Best Prices</Text>
+            <Text style={styles.title}>{t('findBestPrices')}</Text>
           </View>
           <TouchableOpacity
             style={styles.settingsButton}
@@ -183,15 +187,15 @@ export default function HomeScreen() {
         {/* Search Bar */}
         <TouchableOpacity style={styles.searchBar} onPress={() => router.push('/(tabs)/map')}>
           <Ionicons name="search" size={20} color={COLORS.textSecondary} />
-          <Text style={styles.searchText}>Search for a station...</Text>
+          <Text style={styles.searchText}>{t('searchPlaceholder')}</Text>
         </TouchableOpacity>
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <QuickActionCard
             icon="flash"
-            title="Cheapest"
-            subtitle="Near you"
+            title={t('cheapest')}
+            subtitle={t('nearYou')}
             color={COLORS.accentGreen}
             onPress={() => {
               if (cheapestStation) {
@@ -201,15 +205,15 @@ export default function HomeScreen() {
           />
           <QuickActionCard
             icon="map"
-            title="Live Map"
-            subtitle="Explore"
+            title={t('liveMap')}
+            subtitle={t('explore')}
             color={COLORS.accentBlue}
             onPress={() => router.push('/(tabs)/map')}
           />
           <QuickActionCard
             icon="notifications"
-            title="Alerts"
-            subtitle="Set up"
+            title={t('alerts')}
+            subtitle={t('setUp')}
             color={COLORS.accentOrange}
             onPress={() => router.push('/(tabs)/alerts')}
           />
@@ -217,14 +221,14 @@ export default function HomeScreen() {
 
         {/* Fuel Selector */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fuel Type</Text>
+          <Text style={styles.sectionTitle}>{t('fuelType')}</Text>
           <FuelSelector />
         </View>
 
         {/* Cheapest Station Card */}
         {cheapestStation && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Best Price Now</Text>
+            <Text style={styles.sectionTitle}>{t('bestPriceNow')}</Text>
             <TouchableOpacity
               style={styles.featuredCard}
               onPress={() => router.push(`/station/${cheapestStation.id}`)}
@@ -232,7 +236,7 @@ export default function HomeScreen() {
             >
               <View style={styles.featuredBadge}>
                 <Ionicons name="trophy" size={14} color={COLORS.accentGreen} />
-                <Text style={styles.featuredBadgeText}>Cheapest</Text>
+                <Text style={styles.featuredBadgeText}>{t('cheapest')}</Text>
               </View>
               <View style={styles.featuredContent}>
                 <View style={styles.featuredInfo}>
@@ -260,7 +264,7 @@ export default function HomeScreen() {
         {/* Worth the Drive */}
         {worthTheDrive && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Worth the Drive</Text>
+            <Text style={styles.sectionTitle}>{t('worthTheDrive')}</Text>
             <TouchableOpacity
               style={styles.worthCard}
               onPress={() => router.push(`/station/${worthTheDrive.id}`)}
@@ -272,7 +276,7 @@ export default function HomeScreen() {
               <View style={styles.worthContent}>
                 <Text style={styles.worthBrand}>{worthTheDrive.brand}</Text>
                 <Text style={styles.worthSavings}>
-                  Save more at {worthTheDrive.dist.toFixed(1)} km away
+                  {t('saveMoreAt')} {worthTheDrive.dist.toFixed(1)} {t('awayKm')}
                 </Text>
               </View>
               <View style={styles.worthPrice}>
@@ -288,9 +292,9 @@ export default function HomeScreen() {
         {/* Nearby Stations */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Nearby Stations</Text>
+            <Text style={styles.sectionTitle}>{t('nearbyStations')}</Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/map')}>
-              <Text style={styles.seeAllText}>See all</Text>
+              <Text style={styles.seeAllText}>{t('seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -305,6 +309,11 @@ export default function HomeScreen() {
               />
             ))
           )}
+        </View>
+
+        {/* Legal Disclaimer */}
+        <View style={styles.disclaimer}>
+          <Text style={styles.disclaimerText}>{t('legalDisclaimer')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -488,5 +497,16 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginVertical: SPACING.xl,
+  },
+  disclaimer: {
+    paddingTop: SPACING.md,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+  },
+  disclaimerText: {
+    fontSize: 10,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+    lineHeight: 14,
   },
 });
