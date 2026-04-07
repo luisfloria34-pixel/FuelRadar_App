@@ -26,37 +26,35 @@ FuelRadar ist eine Premium-Mobil-App, die Fahrern in Deutschland hilft, die best
 - ✅ Frontend kompiliert und läuft fehlerfrei
 
 ### P1 - Premium UI Redesign (DONE)
-- ✅ **Home Screen**: Premium-Design mit Greeting, Suchleiste, FuelSegmentedControl, RecommendationCard, PremiumStationCard
-- ✅ **Karte Screen**: Komplett auf Deutsch, Filter-Panel, Sortierung (Entfernung/Preis), Ranking-Badges
-- ✅ **Alarme Screen**: Preisalarme mit Modal, Kraftstoff-Auswahl, Zielpreis, deutsche Texte
-- ✅ **Favoriten Screen**: Premium-Cards mit Preisanzeige, Status-Badges (Geöffnet/Geschlossen)
-- ✅ **Station Detail**: Große Preisdarstellung, Öffnungszeiten, Navigation starten, Alarm setzen
-- ✅ **Einstellungen**: Sprache (DE/EN), Kraftstoff-Präferenzen, Suchradius, Rechtliches
-- ✅ **Komplett Deutsch**: Kein englischer Text mehr im UI
-- ✅ **Premium Components**: PremiumStationCard, RecommendationCard, FuelSegmentedControl, PremiumSearchBar
-- ✅ **Konsistentes Theme**: Alle Screens nutzen RADIUS.xl (22px), SPACING.lg (20px), SHADOWS.card
-- ✅ **testIDs**: Auf allen interaktiven Elementen
+- ✅ Home Screen: Premium-Design mit Greeting, Suchleiste, FuelSegmentedControl, RecommendationCard, PremiumStationCard
+- ✅ Karte Screen: Komplett auf Deutsch, Filter-Panel, Sortierung, Ranking-Badges
+- ✅ Alarme Screen: Preisalarme mit Modal, Kraftstoff-Auswahl, Zielpreis
+- ✅ Favoriten Screen: Premium-Cards mit Status-Badges
+- ✅ Station Detail: Große Preisdarstellung, Öffnungszeiten, Navigation, Alarm setzen
+- ✅ Einstellungen: Sprache (DE/EN), Kraftstoff-Präferenzen, Suchradius, Rechtliches
+- ✅ Komplett Deutsch: Kein englischer Text im UI
+- ✅ Konsistentes Theme mit RADIUS.xl (22px), SPACING.lg (20px), SHADOWS
 
-### Backend (DONE - scaffolded)
-- ✅ FastAPI Server mit CORS
-- ✅ Tankerkönig API Proxy (GET /api/stations/nearby, /api/stations/{id})
-- ✅ PostgreSQL Models (Device, Favorite, Alert)
-- ✅ Redis Caching
-- ✅ APScheduler für Alert-Prüfung
-- ✅ Dockerfile & render.yaml für Deployment
+### P2 - Tankerkönig API Integration (DONE)
+- ✅ API-Key sicher in `/app/backend/.env` integriert (TANKERKOENIG_API_KEY)
+- ✅ End-to-End Datenfluss mit echten Tankstellenpreisen verifiziert
+- ✅ 259 echte Tankstellen in Berlin mit Live-Preisen (ARAL, Shell, TotalEnergies, etc.)
+- ✅ Route-Mismatches behoben: GET /stations/prices/list, fuel_type Alias
+- ✅ StationDetail Model für fehlende `dist` korrigiert
+- ✅ Alle 3 API-Endpoints funktional: nearby, detail, prices
 
 ## API Endpoints
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/health` | GET | Health Check |
-| `/api/stations/nearby` | GET | Tankstellen in der Nähe |
+| `/api/stations/nearby` | GET | Tankstellen in der Nähe (params: lat, lng, rad, fuel_type, sort) |
 | `/api/stations/{id}` | GET | Tankstellen-Details |
-| `/api/stations/prices/list` | GET | Preise für mehrere Stationen |
+| `/api/stations/prices/list` | GET | Preise für mehrere Stationen (param: ids) |
 
-## P2 - Ausstehend
-- ⬜ Tankerkönig API-Key integrieren (User muss Key bereitstellen)
-- ⬜ End-to-End Datenfluss mit echten Preisen
+## Ausstehend
+- ⬜ Custom Map Pins mit Preisanzeige (z.B. "[1,64€]")
 - ⬜ Device-Registrierung (UUID + Push Token) testen
+- ⬜ PostgreSQL & Redis Anbindung für Produktion
 
 ## Backlog
 - ⬜ User Authentication
