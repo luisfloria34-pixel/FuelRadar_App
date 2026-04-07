@@ -16,6 +16,7 @@ import { useStore } from '../../src/store/useStore';
 import { fuelApi } from '../../src/services/api';
 import { FuelSegmentedControl } from '../../src/components/FuelSegmentedControl';
 import { PremiumStationCard } from '../../src/components/PremiumStationCard';
+import { PLZSearchBar } from '../../src/components/PLZSearchBar';
 import { Station } from '../../src/types';
 
 const INITIAL_REGION = {
@@ -36,6 +37,8 @@ export default function MapScreen() {
     isFavorite,
     addFavorite,
     removeFavorite,
+    searchRadius,
+    searchLocationName,
   } = useStore();
 
   const [showFilters, setShowFilters] = useState(false);
@@ -88,6 +91,11 @@ export default function MapScreen() {
     }
   }, [sortBy]);
 
+  const handlePLZSearch = useCallback((lat: number, lng: number, radius: number, locationName: string) => {
+    setLocation({ latitude: lat, longitude: lng });
+    fetchStations(lat, lng, radius);
+  }, [fetchStations]);
+
   const getSortedStations = () => {
     if (sortBy === 'price') {
       return [...stations]
@@ -121,17 +129,26 @@ export default function MapScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.title} testID="map-title">Tankstellen</Text>
-          <Text style={styles.subtitle}>in deiner Nähe</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.title} testID="map-title">Tankstellen</Text>
+            <Text style={styles.subtitle}>
+              {searchLocationName || 'in deiner Nähe'}
+            </Text>
+          </View>
+          <TouchableOpacity
+            testID="filter-toggle-btn"
+            style={[styles.filterButton, showFilters && styles.filterButtonActive]}
+            onPress={() => setShowFilters(!showFilters)}
+          >
+            <Ionicons name="options" size={20} color={showFilters ? COLORS.background : COLORS.textPrimary} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity
-          testID="filter-toggle-btn"
-          style={[styles.filterButton, showFilters && styles.filterButtonActive]}
-          onPress={() => setShowFilters(!showFilters)}
-        >
-          <Ionicons name="options" size={20} color={showFilters ? COLORS.background : COLORS.textPrimary} />
-        </TouchableOpacity>
+
+        {/* PLZ Search */}
+        <View style={styles.searchSection}>
+          <PLZSearchBar onSearchComplete={handlePLZSearch} />
+        </View>
       </View>
 
       {/* Filter Panel */}
@@ -235,7 +252,7 @@ export default function MapScreen() {
               </View>
               <Text style={styles.emptyTitle}>Keine Tankstellen gefunden</Text>
               <Text style={styles.emptySubtitle}>
-                Passe die Filter an oder suche in einer anderen Umgebung.
+                Keine Tankstellen in diesem Umkreis gefunden. Passe den Radius an oder suche in einem anderen Gebiet.
               </Text>
             </View>
           )}
@@ -251,11 +268,14 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.md,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    marginBottom: SPACING.md,
   },
   title: {
     ...TYPOGRAPHY.h1,
@@ -265,6 +285,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: COLORS.textSecondary,
     marginTop: 2,
+  },
+  searchSection: {
+    marginTop: 0,
   },
   filterButton: {
     width: 48,

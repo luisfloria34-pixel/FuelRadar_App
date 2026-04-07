@@ -24,6 +24,12 @@ export interface StationDetailResponse {
 }
 
 export const fuelApi = {
+  // Geocode PLZ or city
+  geocode: async (query: string): Promise<any> => {
+    const response = await api.get('/geocode', { params: { q: query } });
+    return response.data;
+  },
+
   // Get nearby stations
   getNearbyStations: async (
     lat: number,

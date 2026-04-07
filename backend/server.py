@@ -165,6 +165,69 @@ async def health_check():
 
 # ============== LEGACY ENDPOINTS (for backward compatibility) ==============
 
+@api_router.get("/geocode")
+async def geocode_search(
+    q: str = Query(..., description="PLZ oder Ortsname"),
+    country: str = Query("de", description="Ländercode")
+):
+    """PLZ oder Ortsnamen in Koordinaten umwandeln via OpenStreetMap Nominatim"""
+    import httpx as _httpx
+    
+    if not q or len(q.strip()) < 2:
+        return {"ok": False, "message": "Suchbegriff zu kurz", "results": []}
+    
+    try:
+        async with _httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={
+                    "q": q.strip(),
+                    "format": "json",
+                    "countrycodes": country,
+                    "limit": 5,
+                    "addressdetails": 1,
+                },
+                headers={
+                    "User-Agent": "FuelRadar/1.0 (fuel price comparison app)",
+                    "Accept-Language": "de",
+                },
+            )
+            
+            if response.status_code != 200:
+                return {"ok": False, "message": "Geocoding fehlgeschlagen", "results": []}
+            
+            data = response.json()
+            results = []
+            for item in data:
+                address = item.get("address", {})
+                results.append({
+                    "lat": float(item["lat"]),
+                    "lng": float(item["lon"]),
+                    "display_name": item.get("display_name", ""),
+                    "postcode": address.get("postcode", ""),
+                    "city": address.get("city") or address.get("town") or address.get("village") or address.get("municipality", ""),
+                    "state": address.get("state", ""),
+                })
+            
+            return {"ok": True, "results": results}
+    
+    except Exception as e:
+        logger.error(f"Geocoding error: {e}")
+        return {"ok": False, "message": str(e), "results": []}
+
+
+@api_router.get("/stations/prices/list")
+async def legacy_prices_list(
+    ids: str = Query(..., description="Komma-getrennte Station IDs")
+):
+    """Preise für mehrere Stationen abrufen"""
+    station_ids = [sid.strip() for sid in ids.split(",") if sid.strip()]
+    if not station_ids:
+        return {"ok": True, "prices": {}}
+    result = await tankerkoenig_service.get_prices(station_ids[:10])
+    return result
+
+
 @api_router.get("/stations/nearby")
 async def legacy_nearby_stations(
     lat: float = Query(...),

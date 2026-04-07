@@ -18,7 +18,7 @@ import { useStore } from '../../src/store/useStore';
 import { fuelApi } from '../../src/services/api';
 import { FuelSegmentedControl } from '../../src/components/FuelSegmentedControl';
 import { PremiumStationCard } from '../../src/components/PremiumStationCard';
-import { PremiumSearchBar } from '../../src/components/PremiumSearchBar';
+import { PLZSearchBar } from '../../src/components/PLZSearchBar';
 import { RecommendationCard } from '../../src/components/RecommendationCard';
 import { Station } from '../../src/types';
 
@@ -36,6 +36,8 @@ export default function HomeScreen() {
     addFavorite,
     removeFavorite,
     initializeApp,
+    searchRadius,
+    searchLocationName,
   } = useStore();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -72,26 +74,29 @@ export default function HomeScreen() {
     }
   };
 
-  const fetchStations = useCallback(async () => {
+  const fetchStations = useCallback(async (lat?: number, lng?: number, rad?: number) => {
     setIsLoading(true);
     try {
       let currentLocation = location;
 
-      if (!currentLocation) {
+      if (lat && lng) {
+        currentLocation = { latitude: lat, longitude: lng };
+        setLocation(currentLocation);
+      } else if (!currentLocation) {
         currentLocation = await requestLocation();
         if (currentLocation) {
           setLocation(currentLocation);
         } else {
-          // Berlin as default
           currentLocation = { latitude: 52.520008, longitude: 13.404954 };
           setLocation(currentLocation);
         }
       }
 
+      const radius = rad || searchRadius;
       const response = await fuelApi.getNearbyStations(
         currentLocation.latitude,
         currentLocation.longitude,
-        10,
+        radius,
         'all',
         'dist'
       );
@@ -124,11 +129,15 @@ export default function HomeScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [location, selectedFuelType]);
+  }, [location, selectedFuelType, searchRadius]);
 
   useEffect(() => {
     fetchStations();
   }, []);
+
+  const handlePLZSearch = useCallback((lat: number, lng: number, radius: number, locationName: string) => {
+    fetchStations(lat, lng, radius);
+  }, [fetchStations]);
 
   useEffect(() => {
     if (stations.length > 0) {
@@ -193,15 +202,16 @@ export default function HomeScreen() {
               <Ionicons name="settings-outline" size={24} color={COLORS.textSecondary} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.title}>Finde die günstigsten Spritpreise{'\n'}in deiner Nähe</Text>
+          <Text style={styles.title}>
+            {searchLocationName
+              ? `Tankstellen in\n${searchLocationName}`
+              : 'Finde die günstigsten Spritpreise\nin deiner Nähe'}
+          </Text>
         </View>
 
-        {/* Search Bar */}
+        {/* PLZ Search + Radius */}
         <View style={styles.section}>
-          <PremiumSearchBar
-            placeholder="Tankstelle suchen..."
-            onPress={() => router.push('/(tabs)/map')}
-          />
+          <PLZSearchBar onSearchComplete={handlePLZSearch} />
         </View>
 
         {/* Fuel Selector */}

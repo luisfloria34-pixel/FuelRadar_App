@@ -28,6 +28,12 @@ interface AppState {
   searchRadius: number;
   setSearchRadius: (radius: number) => void;
   
+  // Search query and location
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  searchLocationName: string;
+  setSearchLocationName: (name: string) => void;
+  
   // Favorites
   favorites: Favorite[];
   loadFavorites: () => Promise<void>;
@@ -118,8 +124,14 @@ export const useStore = create<AppState>((set, get) => ({
   selectedStation: null,
   setSelectedStation: (station) => set({ selectedStation: station }),
   
+  // Search query and location
+  searchQuery: '',
+  setSearchQuery: (query) => set({ searchQuery: query }),
+  searchLocationName: '',
+  setSearchLocationName: (name) => set({ searchLocationName: name }),
+
   // Search radius
-  searchRadius: 5,
+  searchRadius: 10,
   setSearchRadius: (radius) => set({ searchRadius: radius }),
   
   // Favorites

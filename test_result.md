@@ -271,6 +271,18 @@ frontend:
         agent: "testing"
         comment: "✅ Mobile testing confirmed: Header 'Einstellungen' with back button, all sections present (SPRACHE, KRAFTSTOFF, SUCHRADIUS, ALLGEMEIN, RECHTLICHES), language options (Deutsch/English) with German selected, fuel preferences (Diesel, Super E5, Super E10), radius options (5, 10, 15, 25 km). All German text throughout. Navigation back to home working."
 
+  - task: "PLZ Search functionality"
+    implemented: true
+    working: true
+    file: "src/components/PLZSearchBar.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE PLZ SEARCH TESTING COMPLETE: All critical features verified on iPhone 14 (390x844). PLZ search bar with correct placeholder 'PLZ oder Ort eingeben', radius selector (2,5,10,25 km) with 10km default active, successful geocoding for Stuttgart (70173), München (80331), Frankfurt (60311). Dual PLZ inputs confirmed on Home and Karte tabs. Real station results showing brand names (ARAL, ESSO, AGIP), prices (2.14-2.20 EUR), distances (800m, 1.2km entfernt), update timestamps (Vor X Min. aktualisiert). Radius changes trigger new searches correctly. Station detail navigation functional. Found 159-166 stations per search. Backend geocoding via /api/geocode endpoint working with Nominatim. All German language interface confirmed. Station cards display all required elements correctly."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
@@ -292,3 +304,5 @@ agent_communication:
     message: "Comprehensive mobile testing completed on iPhone 14 dimensions (390x844). All core screens validated: Home with German greeting 'Guten Tag', Map with 'Tankstellen' title and empty state, Alerts with modal functionality, Favorites with empty state, and Settings with all sections. Dark theme (#0A0A0B background, #14161A cards) and green accent (#32D74B) confirmed. German language interface throughout. E10 fuel type selected by default. All tab navigation working. Minor selector issues in Playwright due to multiple elements with same text, but functionality confirmed through screenshots."
   - agent: "testing"
     message: "REAL DATA TESTING COMPLETE: Successfully tested FuelRadar app with live Tankerkönig API data. CONFIRMED: 259 real stations found, real brand names (ARAL, Shell, TotalEnergies), realistic prices (2.20-2.21 EUR), distance indicators (1.3 km entfernt), update timestamps (Vor X Min. aktualisiert). All core flows working: Home screen with recommendation card showing 'Spare 0,07 €/L', Karte tab with filter functionality (Kraftstoffart/Sortierung), Favorites and Alarme tabs functional. German language interface throughout. App successfully loads real data from Tankerkönig API - NO MOCK DATA. Station cards show live prices and status. Filter and sort functionality working. Mobile responsiveness confirmed on iPhone 14 dimensions."
+  - agent: "testing"
+    message: "PLZ SEARCH FEATURE TESTING COMPLETE: Comprehensive testing of PLZ search functionality on iPhone 14 (390x844) confirmed all critical features working. ✅ VERIFIED: PLZ search bar with correct placeholder 'PLZ oder Ort eingeben', radius selector (2,5,10,25 km) with 10km default, successful searches for Stuttgart (70173), München (80331), Frankfurt (60311), dual PLZ inputs on Home and Karte tabs, real station results with brand names (ARAL, ESSO, AGIP), prices (2.14-2.20 EUR), distances (800m, 1.2km entfernt), update timestamps (Vor X Min. aktualisiert), radius changes triggering new searches, station detail navigation working. Found 159-166 stations per search. All German language interface confirmed. PLZ geocoding via /api/geocode endpoint functional. Station cards display all required elements correctly."
