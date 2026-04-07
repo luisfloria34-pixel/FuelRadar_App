@@ -8,18 +8,18 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
-  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, RADIUS, SHADOWS } from '../../src/constants/theme';
+import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 import { fuelApi } from '../../src/services/api';
-import { FuelSelector } from '../../src/components/FuelSelector';
-import { StationCard } from '../../src/components/StationCard';
-import { QuickActionCard } from '../../src/components/QuickActionCard';
+import { FuelSegmentedControl } from '../../src/components/FuelSegmentedControl';
+import { PremiumStationCard } from '../../src/components/PremiumStationCard';
+import { PremiumSearchBar } from '../../src/components/PremiumSearchBar';
+import { RecommendationCard } from '../../src/components/RecommendationCard';
 import { Station } from '../../src/types';
 
 export default function HomeScreen() {
@@ -32,22 +32,18 @@ export default function HomeScreen() {
     selectedFuelType,
     isLoading,
     setIsLoading,
-    t,
+    isFavorite,
+    addFavorite,
+    removeFavorite,
     initializeApp,
   } = useStore();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [greeting, setGreeting] = useState('');
   const [cheapestStation, setCheapestStation] = useState<Station | null>(null);
-  const [worthTheDrive, setWorthTheDrive] = useState<Station | null>(null);
+  const [savings, setSavings] = useState<string>('0,08 €/L');
 
   useEffect(() => {
     initializeApp();
-    
-    const hour = new Date().getHours();
-    if (hour < 12) setGreeting(t('goodMorning'));
-    else if (hour < 18) setGreeting(t('goodAfternoon'));
-    else setGreeting(t('goodEvening'));
   }, []);
 
   const requestLocation = async () => {
@@ -55,8 +51,8 @@ export default function HomeScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
-          'Standort erforderlich',
-          'FuelRadar benötigt Standortzugriff, um Tankstellen in der Nähe zu finden.',
+          'Standort benötigt',
+          'FuelRadar benötigt deinen Standort, um Tankstellen in deiner Nähe zu finden.',
           [{ text: 'OK' }]
         );
         return null;
@@ -86,7 +82,7 @@ export default function HomeScreen() {
         if (currentLocation) {
           setLocation(currentLocation);
         } else {
-          // Use Berlin as default
+          // Berlin as default
           currentLocation = { latitude: 52.520008, longitude: 13.404954 };
           setLocation(currentLocation);
         }
@@ -113,17 +109,18 @@ export default function HomeScreen() {
 
         if (sorted.length > 0) {
           setCheapestStation(sorted[0]);
+          
+          // Calculate savings compared to average
+          const prices = sorted.map(s => s[selectedFuelType]).filter(p => p !== null) as number[];
+          if (prices.length > 1) {
+            const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+            const savingsAmount = avg - prices[0];
+            setSavings(`${savingsAmount.toFixed(2).replace('.', ',')} €/L`);
+          }
         }
-
-        // Find "worth the drive" - cheap station that's 5-15km away
-        const worthIt = sorted.find(
-          (s) => s.dist >= 5 && s.dist <= 15 && s[selectedFuelType]
-        );
-        setWorthTheDrive(worthIt || null);
       }
     } catch (error) {
       console.error('Error fetching stations:', error);
-      Alert.alert('Fehler', 'Tankstellen konnten nicht geladen werden.');
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +151,21 @@ export default function HomeScreen() {
     setRefreshing(false);
   };
 
-  const nearbyStations = stations.slice(0, 5);
+  const handleFavoriteToggle = async (station: Station) => {
+    if (isFavorite(station.id)) {
+      await removeFavorite(station.id);
+    } else {
+      await addFavorite({
+        station_id: station.id,
+        station_name: station.name,
+        station_brand: station.brand,
+        lat: station.lat,
+        lng: station.lng,
+      });
+    }
+  };
+
+  const nearbyStations = stations.slice(0, 6);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -165,155 +176,88 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={COLORS.accentGreen}
+            tintColor={COLORS.accent}
           />
         }
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>{greeting}</Text>
-            <Text style={styles.title}>{t('findBestPrices')}</Text>
+          <View style={styles.greetingRow}>
+            <Text style={styles.greeting}>Guten Tag 👋</Text>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => router.push('/settings')}
+            >
+              <Ionicons name="settings-outline" size={24} color={COLORS.textSecondary} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.settingsButton}
-            onPress={() => router.push('/settings')}
-          >
-            <Ionicons name="person-circle-outline" size={32} color={COLORS.textSecondary} />
-          </TouchableOpacity>
+          <Text style={styles.title}>Finde die günstigsten Spritpreise{'\n'}in deiner Nähe</Text>
         </View>
 
         {/* Search Bar */}
-        <TouchableOpacity style={styles.searchBar} onPress={() => router.push('/(tabs)/map')}>
-          <Ionicons name="search" size={20} color={COLORS.textSecondary} />
-          <Text style={styles.searchText}>{t('searchPlaceholder')}</Text>
-        </TouchableOpacity>
-
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <QuickActionCard
-            icon="flash"
-            title={t('cheapest')}
-            subtitle={t('nearYou')}
-            color={COLORS.accentGreen}
-            onPress={() => {
-              if (cheapestStation) {
-                router.push(`/station/${cheapestStation.id}`);
-              }
-            }}
-          />
-          <QuickActionCard
-            icon="map"
-            title={t('liveMap')}
-            subtitle={t('explore')}
-            color={COLORS.accentBlue}
+        <View style={styles.section}>
+          <PremiumSearchBar
+            placeholder="Tankstelle suchen..."
             onPress={() => router.push('/(tabs)/map')}
-          />
-          <QuickActionCard
-            icon="notifications"
-            title={t('alerts')}
-            subtitle={t('setUp')}
-            color={COLORS.accentOrange}
-            onPress={() => router.push('/(tabs)/alerts')}
           />
         </View>
 
         {/* Fuel Selector */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('fuelType')}</Text>
-          <FuelSelector />
+          <FuelSegmentedControl />
         </View>
 
-        {/* Cheapest Station Card */}
+        {/* Divider */}
+        <View style={styles.divider} />
+
+        {/* Recommendation Card */}
         {cheapestStation && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('bestPriceNow')}</Text>
-            <TouchableOpacity
-              style={styles.featuredCard}
+            <RecommendationCard
+              savings={savings}
+              distance={`${cheapestStation.dist.toFixed(1).replace('.', ',')} km`}
               onPress={() => router.push(`/station/${cheapestStation.id}`)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.featuredBadge}>
-                <Ionicons name="trophy" size={14} color={COLORS.accentGreen} />
-                <Text style={styles.featuredBadgeText}>{t('cheapest')}</Text>
-              </View>
-              <View style={styles.featuredContent}>
-                <View style={styles.featuredInfo}>
-                  <Text style={styles.featuredBrand}>{cheapestStation.brand}</Text>
-                  <Text style={styles.featuredAddress}>
-                    {cheapestStation.street} {cheapestStation.house_number}
-                  </Text>
-                  <Text style={styles.featuredDistance}>
-                    {cheapestStation.dist < 1
-                      ? `${Math.round(cheapestStation.dist * 1000)} m`
-                      : `${cheapestStation.dist.toFixed(1)} km`}
-                  </Text>
-                </View>
-                <View style={styles.featuredPrice}>
-                  <Text style={styles.featuredPriceValue}>
-                    {cheapestStation[selectedFuelType]?.toFixed(3) || 'N/A'}
-                  </Text>
-                  <Text style={styles.featuredPriceUnit}>€/L</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
+            />
           </View>
         )}
 
-        {/* Worth the Drive */}
-        {worthTheDrive && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('worthTheDrive')}</Text>
-            <TouchableOpacity
-              style={styles.worthCard}
-              onPress={() => router.push(`/station/${worthTheDrive.id}`)}
-              activeOpacity={0.8}
-            >
-              <View style={styles.worthIcon}>
-                <Ionicons name="car" size={24} color={COLORS.accentBlue} />
-              </View>
-              <View style={styles.worthContent}>
-                <Text style={styles.worthBrand}>{worthTheDrive.brand}</Text>
-                <Text style={styles.worthSavings}>
-                  {t('saveMoreAt')} {worthTheDrive.dist.toFixed(1)} {t('awayKm')}
-                </Text>
-              </View>
-              <View style={styles.worthPrice}>
-                <Text style={styles.worthPriceValue}>
-                  {worthTheDrive[selectedFuelType]?.toFixed(3)}
-                </Text>
-                <Text style={styles.worthPriceUnit}>€</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Divider */}
+        <View style={styles.divider} />
 
         {/* Nearby Stations */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('nearbyStations')}</Text>
+            <Text style={styles.sectionTitle}>Günstigste in deiner Nähe</Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/map')}>
-              <Text style={styles.seeAllText}>{t('seeAll')}</Text>
+              <Text style={styles.seeAllText}>Alle</Text>
             </TouchableOpacity>
           </View>
 
           {isLoading ? (
-            <ActivityIndicator size="large" color={COLORS.accentGreen} style={styles.loader} />
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.accent} />
+              <Text style={styles.loadingText}>Suche Tankstellen...</Text>
+            </View>
           ) : (
             nearbyStations.map((station) => (
-              <StationCard
+              <PremiumStationCard
                 key={station.id}
                 station={station}
                 onPress={() => router.push(`/station/${station.id}`)}
+                onFavoritePress={() => handleFavoriteToggle(station)}
+                isFavorite={isFavorite(station.id)}
               />
             ))
           )}
         </View>
 
-        {/* Legal Disclaimer */}
-        <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerText}>{t('legalDisclaimer')}</Text>
+        {/* Legal Footer */}
+        <View style={styles.legalFooter}>
+          <Text style={styles.legalText}>
+            Daten: Tankerkönig / MTS-K (CC BY 4.0){'\n'}
+            Preise können sich ändern. Keine Gewähr.
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -329,50 +273,38 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: SPACING.md,
-    paddingBottom: 100,
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: 120,
   },
   header: {
+    paddingTop: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  greetingRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.sm,
   },
   greeting: {
-    fontSize: 14,
+    fontSize: 16,
     color: COLORS.textSecondary,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    marginTop: 4,
   },
   settingsButton: {
     padding: SPACING.xs,
   },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    marginBottom: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  searchText: {
-    fontSize: 16,
-    color: COLORS.textMuted,
-    marginLeft: SPACING.sm,
-  },
-  quickActions: {
-    flexDirection: 'row',
-    marginBottom: SPACING.lg,
-    marginHorizontal: -SPACING.xs,
+  title: {
+    ...TYPOGRAPHY.h1,
+    color: COLORS.textPrimary,
+    lineHeight: 34,
   },
   section: {
     marginBottom: SPACING.lg,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: COLORS.border,
+    marginVertical: SPACING.md,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -381,132 +313,32 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    ...TYPOGRAPHY.h3,
     color: COLORS.textPrimary,
-    marginBottom: SPACING.md,
   },
   seeAllText: {
     fontSize: 14,
-    color: COLORS.accentBlue,
-    fontWeight: '500',
-  },
-  featuredCard: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.accentGreen + '40',
-    ...SHADOWS.medium,
-  },
-  featuredBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.accentGreen + '20',
-    alignSelf: 'flex-start',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 4,
-    borderRadius: RADIUS.sm,
-    marginBottom: SPACING.sm,
-  },
-  featuredBadgeText: {
-    fontSize: 12,
     fontWeight: '600',
-    color: COLORS.accentGreen,
-    marginLeft: 4,
+    color: COLORS.accent,
   },
-  featuredContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  loadingContainer: {
     alignItems: 'center',
+    paddingVertical: SPACING.xxl,
   },
-  featuredInfo: {
-    flex: 1,
-  },
-  featuredBrand: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  featuredAddress: {
+  loadingText: {
     fontSize: 14,
     color: COLORS.textSecondary,
-    marginTop: 2,
+    marginTop: SPACING.md,
   },
-  featuredDistance: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    marginTop: 4,
-  },
-  featuredPrice: {
-    alignItems: 'flex-end',
-  },
-  featuredPriceValue: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: COLORS.accentGreen,
-  },
-  featuredPriceUnit: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-  },
-  worthCard: {
-    flexDirection: 'row',
+  legalFooter: {
+    paddingTop: SPACING.lg,
+    paddingBottom: SPACING.md,
     alignItems: 'center',
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  worthIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: RADIUS.md,
-    backgroundColor: COLORS.accentBlue + '20',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING.md,
-  },
-  worthContent: {
-    flex: 1,
-  },
-  worthBrand: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  worthSavings: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  worthPrice: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-  },
-  worthPriceValue: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.accentBlue,
-  },
-  worthPriceUnit: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    marginLeft: 2,
-  },
-  loader: {
-    marginVertical: SPACING.xl,
-  },
-  disclaimer: {
-    paddingTop: SPACING.md,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  disclaimerText: {
-    fontSize: 10,
+  legalText: {
+    fontSize: 11,
     color: COLORS.textMuted,
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: 16,
   },
 });
