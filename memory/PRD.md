@@ -1,90 +1,91 @@
-# FuelRadar - Premium Fuel Price App for Germany
+# FuelRadar - Premium Kraftstoffpreis-App für Deutschland
 
-## Overview
-FuelRadar is a premium mobile app that helps drivers in Germany find the best fuel prices nearby. The app features a luxurious dark theme with premium UI design inspired by Tesla, Uber, and Apple Maps.
+## Übersicht
+FuelRadar ist eine Premium-Mobil-App, die Fahrern in Deutschland hilft, die besten Kraftstoffpreise in der Nähe zu finden. Die App bietet ein luxuriöses dunkles Design inspiriert von Tesla, Uber und Apple Maps.
 
 ## Tech Stack
-- **Frontend**: Expo (React Native) with TypeScript
-- **Backend**: FastAPI (Python)
-- **Database**: MongoDB
-- **External API**: Tankerkönig API for real-time fuel prices in Germany
-
-## Features
-
-### MVP (Implemented)
-1. **Splash Screen** - Animated radar logo with "Live fuel prices in Germany" tagline
-2. **Onboarding** - 3 slides explaining app features (Skip/Next navigation)
-3. **Home Screen**
-   - Greeting based on time of day
-   - Quick action cards (Cheapest, Live Map, Alerts)
-   - Fuel type selector (Diesel, E5, E10)
-   - Best Price Now card
-   - Worth the Drive recommendation
-   - Nearby stations list
-4. **Map/List Screen** - Station list with filtering and sorting (distance/price)
-5. **Alerts Screen** - Create price alerts with fuel type and threshold
-6. **Favorites Screen** - Save preferred stations
-7. **Station Detail** - Large price cards, opening hours, navigate button
-8. **Settings** - Fuel preferences, search radius, about info
-
-### Data Source
-- **Without API Key**: Mock data for development/demo
-- **With API Key**: Real-time data from Tankerkönig API
-
-## Configuration
-
-### Backend Environment Variables
-```
-MONGO_URL="mongodb://localhost:27017"
-DB_NAME="test_database"
-TANKERKOENIG_API_KEY=""  # Add your key here
-```
-
-### Getting Tankerkönig API Key
-1. Visit https://creativecommons.tankerkoenig.de/
-2. Register with your email
-3. Receive your free API key
-4. Add it to `/app/backend/.env`
-
-## API Endpoints
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Health check with API status |
-| `/api/stations/nearby` | GET | Get nearby stations (params: lat, lng, rad, fuel_type, sort) |
-| `/api/stations/{id}` | GET | Get station details |
-| `/api/stations/prices/list` | GET | Get prices for multiple stations |
-| `/api/push-tokens` | POST | Register push notification token |
-| `/api/analytics/search` | POST | Log search analytics |
+- **Frontend**: Expo (React Native) mit TypeScript, Expo Router
+- **Backend**: FastAPI (Python) mit PostgreSQL (SQLModel), Redis, APScheduler
+- **State Management**: Zustand
+- **Externe API**: Tankerkönig API für Echtzeit-Kraftstoffpreise
+- **Push**: Expo Push Notifications
 
 ## Design System
-
-### Colors
 - Background: #0A0A0B
 - Card: #14161A
 - Border: #2A2F38
-- Primary Text: #F5F7FA
-- Secondary Text: #9AA3AF
 - Accent Green: #32D74B
-- Accent Blue: #3B82F6
-- Warning Orange: #FF9F0A
-- Error Red: #FF453A
+- Border Radius: 22px (RADIUS.xl)
+- Padding: 16-20px (SPACING.md/lg)
+- Fuel Colors: Diesel (#3B82F6), E5 (#32D74B), E10 (#FF9F0A)
 
-### Fuel Type Colors
-- Diesel: Blue (#3B82F6)
-- E5: Green (#32D74B)
-- E10: Orange (#FF9F0A)
+## Implementiert (April 2026)
 
-## Local Storage (AsyncStorage)
-- Favorites list
-- Alerts configuration
-- Onboarding completion status
-- User preferences
+### P0 - Build & Core (DONE)
+- ✅ Build-Fehler behoben (SHADOWS.medium/small fehlten im Theme)
+- ✅ Frontend kompiliert und läuft fehlerfrei
 
-## Future Enhancements
-1. User authentication
-2. Push notifications for price alerts
-3. Native map view (already configured, works on mobile devices)
-4. Price history charts
-5. Route planning with fuel stops
-6. Widget for home screen
+### P1 - Premium UI Redesign (DONE)
+- ✅ **Home Screen**: Premium-Design mit Greeting, Suchleiste, FuelSegmentedControl, RecommendationCard, PremiumStationCard
+- ✅ **Karte Screen**: Komplett auf Deutsch, Filter-Panel, Sortierung (Entfernung/Preis), Ranking-Badges
+- ✅ **Alarme Screen**: Preisalarme mit Modal, Kraftstoff-Auswahl, Zielpreis, deutsche Texte
+- ✅ **Favoriten Screen**: Premium-Cards mit Preisanzeige, Status-Badges (Geöffnet/Geschlossen)
+- ✅ **Station Detail**: Große Preisdarstellung, Öffnungszeiten, Navigation starten, Alarm setzen
+- ✅ **Einstellungen**: Sprache (DE/EN), Kraftstoff-Präferenzen, Suchradius, Rechtliches
+- ✅ **Komplett Deutsch**: Kein englischer Text mehr im UI
+- ✅ **Premium Components**: PremiumStationCard, RecommendationCard, FuelSegmentedControl, PremiumSearchBar
+- ✅ **Konsistentes Theme**: Alle Screens nutzen RADIUS.xl (22px), SPACING.lg (20px), SHADOWS.card
+- ✅ **testIDs**: Auf allen interaktiven Elementen
+
+### Backend (DONE - scaffolded)
+- ✅ FastAPI Server mit CORS
+- ✅ Tankerkönig API Proxy (GET /api/stations/nearby, /api/stations/{id})
+- ✅ PostgreSQL Models (Device, Favorite, Alert)
+- ✅ Redis Caching
+- ✅ APScheduler für Alert-Prüfung
+- ✅ Dockerfile & render.yaml für Deployment
+
+## API Endpoints
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Health Check |
+| `/api/stations/nearby` | GET | Tankstellen in der Nähe |
+| `/api/stations/{id}` | GET | Tankstellen-Details |
+| `/api/stations/prices/list` | GET | Preise für mehrere Stationen |
+
+## P2 - Ausstehend
+- ⬜ Tankerkönig API-Key integrieren (User muss Key bereitstellen)
+- ⬜ End-to-End Datenfluss mit echten Preisen
+- ⬜ Device-Registrierung (UUID + Push Token) testen
+
+## Backlog
+- ⬜ User Authentication
+- ⬜ Premium Tier (Free vs Paid Alerts)
+- ⬜ Preis-Historie Charts
+- ⬜ Routenplanung mit Tankstopps
+- ⬜ Home Screen Widget
+
+## Architektur
+```
+app/
+├── backend/
+│   ├── app/
+│   │   ├── core/ (config, database, cache)
+│   │   ├── models/ (device, favorite, alert)
+│   │   ├── routes/ (stations, devices, alerts, favorites)
+│   │   ├── services/ (tankerkoenig, push_notifications)
+│   │   └── workers/ (alert_worker)
+│   └── server.py
+└── frontend/
+    ├── app/
+    │   ├── (tabs)/ (index, map, alerts, favorites, _layout)
+    │   ├── station/[id].tsx
+    │   ├── settings.tsx
+    │   └── onboarding.tsx
+    └── src/
+        ├── components/ (PremiumStationCard, etc.)
+        ├── constants/ (theme, translations)
+        ├── services/ (api)
+        ├── store/ (useStore)
+        └── types/
+```
