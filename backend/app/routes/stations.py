@@ -26,7 +26,21 @@ class NearbyResponse(BaseModel):
     stations: List[StationPrice]
     message: Optional[str] = None
 
-class StationDetail(StationPrice):
+class StationDetail(BaseModel):
+    id: str
+    name: str
+    brand: str
+    street: str
+    house_number: str
+    post_code: str
+    place: str
+    lat: float
+    lng: float
+    diesel: Optional[float] = None
+    e5: Optional[float] = None
+    e10: Optional[float] = None
+    is_open: bool
+    dist: Optional[float] = None
     whole_day: Optional[bool] = None
     opening_times: Optional[List[dict]] = None
     overrides: Optional[List[str]] = None
@@ -51,7 +65,7 @@ async def get_nearby_stations(
     lat: float = Query(..., description="Breitengrad"),
     lng: float = Query(..., description="Längengrad"),
     radius: float = Query(5.0, alias="rad", description="Radius in km (max 25)"),
-    fuel: str = Query("all", description="Kraftstoffart: diesel, e5, e10, all"),
+    fuel: str = Query("all", alias="fuel_type", description="Kraftstoffart: diesel, e5, e10, all"),
     sort: str = Query("dist", description="Sortierung: dist (Entfernung), price (Preis)")
 ):
     """Tankstellen in der Nähe finden"""
@@ -93,18 +107,20 @@ async def get_station_detail(station_id: str):
     return result
 
 
-@router.post("/prices", response_model=PricesResponse)
-async def get_prices(request: PricesRequest):
+@router.get("/prices/list", response_model=PricesResponse)
+async def get_prices(ids: str = Query(..., description="Komma-getrennte Station IDs")):
     """Aktuelle Preise für mehrere Tankstellen abrufen (max 10)"""
     
-    if not request.ids:
+    station_ids = [sid.strip() for sid in ids.split(",") if sid.strip()]
+    
+    if not station_ids:
         return {"ok": True, "prices": {}}
     
-    if len(request.ids) > 10:
+    if len(station_ids) > 10:
         raise HTTPException(
             status_code=400,
             detail="Maximal 10 Tankstellen pro Anfrage"
         )
     
-    result = await tankerkoenig_service.get_prices(request.ids)
+    result = await tankerkoenig_service.get_prices(station_ids)
     return result
