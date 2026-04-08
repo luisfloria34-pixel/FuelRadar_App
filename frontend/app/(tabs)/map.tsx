@@ -17,13 +17,12 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
+import { COLORS, SPACING, RADIUS, SHADOWS } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 import { fuelApi } from '../../src/services/api';
 import { Station, FuelType } from '../../src/types';
 
 const MAPBOX_TOKEN = 'pk.eyJ1IjoiZnVlbHJhZGFyLTIwMjYiLCJhIjoiY21ucHR0d3IwZDNGMDA4ODJxc2Y1bnJtejFxbiJ9.gGr8WYRsqT0g8-D4J9nEdA';
-const MAP_STYLE = 'mapbox://styles/mapbox/dark-v11';
 const RADIUS_OPTIONS = [2, 5, 10, 25];
 const FUEL_OPTIONS: { type: FuelType; label: string }[] = [
   { type: 'diesel', label: 'Diesel' },
@@ -55,19 +54,18 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
+  const [mapReady, setMapReady] = useState(false);
   const sheetAnim = useRef(new Animated.Value(0)).current;
   const mapContainerRef = useRef<any>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
 
-  // Find cheapest station price
   const getCheapestPrice = useCallback(() => {
     const openStations = stations.filter(s => s.is_open && s[selectedFuelType] != null);
     if (openStations.length === 0) return null;
     return Math.min(...openStations.map(s => s[selectedFuelType] as number));
   }, [stations, selectedFuelType]);
 
-  // Fetch stations
   const fetchStations = useCallback(async (lat: number, lng: number, rad: number) => {
     setIsLoading(true);
     try {
@@ -82,7 +80,6 @@ export default function MapScreen() {
     }
   }, []);
 
-  // Init location
   useEffect(() => {
     const init = async () => {
       try {
@@ -93,19 +90,26 @@ export default function MapScreen() {
           setMapCenter(center);
           setLocation({ latitude: center.lat, longitude: center.lng });
           fetchStations(center.lat, center.lng, searchRadius);
+        } else if (location) {
+          const center = { lat: location.latitude, lng: location.longitude };
+          setMapCenter(center);
+          fetchStations(center.lat, center.lng, searchRadius);
         } else {
           setLocation({ latitude: DEFAULT_CENTER.lat, longitude: DEFAULT_CENTER.lng });
           fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, searchRadius);
         }
       } catch {
-        setLocation({ latitude: DEFAULT_CENTER.lat, longitude: DEFAULT_CENTER.lng });
-        fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, searchRadius);
+        if (location) {
+          fetchStations(location.latitude, location.longitude, searchRadius);
+        } else {
+          setLocation({ latitude: DEFAULT_CENTER.lat, longitude: DEFAULT_CENTER.lng });
+          fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, searchRadius);
+        }
       }
     };
     init();
   }, []);
 
-  // PLZ Search
   const handleSearch = useCallback(async () => {
     const q = searchQuery.trim();
     if (q.length < 2) return;
@@ -129,44 +133,39 @@ export default function MapScreen() {
     }
   }, [searchQuery, searchRadius]);
 
-  // Radius change
   const handleRadiusChange = (r: number) => {
     setSearchRadius(r);
+    setSelectedStation(null);
     fetchStations(mapCenter.lat, mapCenter.lng, r);
   };
 
-  // Fuel type change
   const handleFuelChange = (f: FuelType) => {
     setSelectedFuelType(f);
   };
 
-  // Select station
-  const handleSelectStation = (station: Station) => {
+  const handleSelectStation = useCallback((station: Station) => {
     setSelectedStation(station);
     Animated.spring(sheetAnim, { toValue: 1, useNativeDriver: true, friction: 8 }).start();
     if (mapRef.current) {
       mapRef.current.flyTo({ center: [station.lng, station.lat], zoom: 14, duration: 800 });
     }
-  };
+  }, []);
 
-  // Close bottom sheet
   const handleCloseSheet = () => {
     Animated.timing(sheetAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
       setSelectedStation(null);
     });
   };
 
-  // Navigate to station
   const handleNavigate = (station: Station) => {
     const url = Platform.select({
       ios: `maps:0,0?q=${station.name}@${station.lat},${station.lng}`,
       android: `geo:0,0?q=${station.lat},${station.lng}(${station.name})`,
-      default: `https://www.google.com/maps/search/?api=1&query=${station.lat},${station.lng}`,
+      default: `https://www.google.com/maps/dir/?api=1&destination=${station.lat},${station.lng}`,
     });
     Linking.openURL(url as string);
   };
 
-  // Toggle favorite
   const handleFavoriteToggle = async (station: Station) => {
     if (isFavorite(station.id)) {
       await removeFavorite(station.id);
@@ -183,7 +182,7 @@ export default function MapScreen() {
 
   const formatPrice = (price: number | null) => {
     if (!price) return '—';
-    return price.toFixed(2).replace('.', ',') + ' €';
+    return price.toFixed(2).replace('.', ',') + ' \u20AC';
   };
 
   const formatDistance = (dist: number) => {
@@ -193,14 +192,14 @@ export default function MapScreen() {
 
   const cheapestPrice = getCheapestPrice();
 
-  // Initialize mapbox-gl on web via CDN
+  // ─── Web: Load Mapbox GL JS via CDN ───
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     let map: any = null;
 
-    const loadMapbox = () => {
-      return new Promise<void>((resolve) => {
-        if ((window as any).maplibregl) {
+    const loadMapboxGL = () => {
+      return new Promise<void>((resolve, reject) => {
+        if ((window as any).mapboxgl) {
           resolve();
           return;
         }
@@ -210,76 +209,132 @@ export default function MapScreen() {
           const link = document.createElement('link');
           link.id = 'mapbox-css';
           link.rel = 'stylesheet';
-          link.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
+          link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.9.3/mapbox-gl.css';
           document.head.appendChild(link);
         }
 
-        // Add JS (MapLibre = open-source fork, identical API)
+        // Add JS
         const script = document.createElement('script');
-        script.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
+        script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.9.3/mapbox-gl.js';
         script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load Mapbox GL JS'));
         document.head.appendChild(script);
       });
     };
 
     const initMap = async () => {
       try {
-        await loadMapbox();
-        const maplibregl = (window as any).maplibregl;
-        if (!maplibregl) return;
+        await loadMapboxGL();
+        const mapboxgl = (window as any).mapboxgl;
+        if (!mapboxgl) return;
 
-        const container = mapContainerRef.current;
-        if (!container) return;
+        mapboxgl.accessToken = MAPBOX_TOKEN;
 
-        map = new maplibregl.Map({
+        // Get the DOM node by nativeID
+        const container = document.getElementById('mapbox-map-container');
+        if (!container) {
+          console.error('Map container not found');
+          return;
+        }
+
+        // Ensure container has proper dimensions for Mapbox
+        container.style.width = '100%';
+        container.style.height = '100%';
+        container.style.position = 'absolute';
+        container.style.top = '0';
+        container.style.left = '0';
+
+        map = new mapboxgl.Map({
           container,
-          style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+          style: 'mapbox://styles/mapbox/dark-v11',
           center: [mapCenter.lng, mapCenter.lat],
           zoom: 12,
           attributionControl: false,
+          pitchWithRotate: false,
         });
 
         mapRef.current = map;
-        map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+
+        map.on('load', () => {
+          setMapReady(true);
+        });
+
+        map.addControl(
+          new mapboxgl.NavigationControl({ showCompass: false }),
+          'bottom-right'
+        );
+
+        // Close bottom sheet when clicking on empty map area
+        map.on('click', (e: any) => {
+          // Only close if clicking on the map itself, not a marker
+          if (e.originalEvent?.target?.closest?.('.fuel-marker')) return;
+          handleCloseSheet();
+        });
       } catch (e) {
         console.error('Map init error:', e);
       }
     };
 
-    const timer = setTimeout(initMap, 200);
+    const timer = setTimeout(initMap, 300);
     return () => {
       clearTimeout(timer);
       if (map) map.remove();
     };
   }, []);
 
-  // Update markers when stations/fuel changes
+  // ─── Update markers when stations/fuel/selection changes ───
   useEffect(() => {
     if (Platform.OS !== 'web' || !mapRef.current) return;
-    const maplibregl = (window as any).maplibregl;
-    if (!maplibregl) return;
+    const mapboxgl = (window as any).mapboxgl;
+    if (!mapboxgl) return;
 
     // Clear old markers
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
 
+    // Compute cheapest price directly inside effect
+    const openWithPrice = stations.filter(s => s.is_open && s[selectedFuelType] != null);
+    const cheapest = openWithPrice.length > 0
+      ? Math.min(...openWithPrice.map(s => s[selectedFuelType] as number))
+      : null;
+
     stations.forEach((station) => {
       const price = station[selectedFuelType];
-      if (!price || !station.is_open) return;
+      if (price == null || !station.is_open) return;
 
-      const isCheapest = price === cheapestPrice;
+      const isCheapest = price === cheapest;
       const isSelected = selectedStation?.id === station.id;
 
       const el = document.createElement('div');
+      el.className = 'fuel-marker';
       el.style.cursor = 'pointer';
-      el.style.zIndex = isSelected ? '10' : isCheapest ? '5' : '1';
+      el.style.zIndex = isSelected ? '20' : isCheapest ? '10' : '1';
+      el.style.filter = isSelected ? 'drop-shadow(0 0 12px rgba(34,197,94,0.6))' : 'none';
 
-      const bg = isSelected ? '#FFFFFF' : isCheapest ? '#22C55E' : '#1C1C1E';
-      const textColor = isSelected ? '#1C1C1E' : isCheapest ? '#FFFFFF' : '#FFFFFF';
-      const shadow = isSelected ? '0 4px 16px rgba(0,0,0,0.5)' : isCheapest ? '0 2px 8px rgba(34,197,94,0.4)' : '0 1px 4px rgba(0,0,0,0.3)';
-      const priceText = price.toFixed(2).replace('.', ',') + ' €';
-      const fontSize = isSelected ? '14px' : '12px';
-      const padding = isSelected ? '6px 14px' : '5px 10px';
+      const priceText = price.toFixed(2).replace('.', ',') + ' \u20AC';
+
+      // Marker pill colors
+      let bg: string, textColor: string, borderStyle: string, shadowStyle: string;
+      if (isSelected) {
+        bg = '#FFFFFF';
+        textColor = '#0A0A0B';
+        borderStyle = '2px solid #22C55E';
+        shadowStyle = '0 4px 20px rgba(34,197,94,0.5)';
+      } else if (isCheapest) {
+        bg = '#22C55E';
+        textColor = '#FFFFFF';
+        borderStyle = 'none';
+        shadowStyle = '0 2px 12px rgba(34,197,94,0.5)';
+      } else {
+        bg = '#2A2F38';
+        textColor = '#FFFFFF';
+        borderStyle = '1px solid #3A3F48';
+        shadowStyle = '0 2px 8px rgba(0,0,0,0.4)';
+      }
+
+      const arrowColor = isSelected ? '#FFFFFF' : isCheapest ? '#22C55E' : '#2A2F38';
+      const fontSize = isSelected ? '14px' : '13px';
+      const padding = isSelected ? '6px 14px' : '5px 12px';
 
       el.innerHTML = `
         <div style="
@@ -290,31 +345,35 @@ export default function MapScreen() {
           padding: ${padding};
           border-radius: 20px;
           white-space: nowrap;
-          box-shadow: ${shadow};
-          border: ${isSelected ? '2px solid #22C55E' : 'none'};
+          box-shadow: ${shadowStyle};
+          border: ${borderStyle};
           transition: all 0.2s ease;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', 'Segoe UI', sans-serif;
+          letter-spacing: 0.3px;
         ">${priceText}</div>
         <div style="
           width: 0; height: 0;
-          border-left: 6px solid transparent;
-          border-right: 6px solid transparent;
-          border-top: 6px solid ${bg};
-          margin: 0 auto;
+          border-left: 7px solid transparent;
+          border-right: 7px solid transparent;
+          border-top: 7px solid ${arrowColor};
+          margin: -1px auto 0 auto;
         "></div>
       `;
 
-      el.addEventListener('click', () => handleSelectStation(station));
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleSelectStation(station);
+      });
 
-      const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'bottom', offset: [0, 0] })
         .setLngLat([station.lng, station.lat])
         .addTo(mapRef.current);
 
       markersRef.current.push(marker);
     });
-  }, [stations, selectedFuelType, cheapestPrice, selectedStation]);
+  }, [stations, selectedFuelType, selectedStation, handleSelectStation, mapReady]);
 
-  // Update map center when mapCenter changes
+  // ─── Update map center when mapCenter changes ───
   useEffect(() => {
     if (Platform.OS !== 'web' || !mapRef.current) return;
     mapRef.current.flyTo({ center: [mapCenter.lng, mapCenter.lat], zoom: 12, duration: 1500 });
@@ -330,13 +389,15 @@ export default function MapScreen() {
       {/* Map Container */}
       {Platform.OS === 'web' ? (
         <View
-          ref={mapContainerRef}
           style={styles.mapContainer}
           testID="mapbox-container"
+          nativeID="mapbox-map-container"
         />
       ) : (
         <View style={[styles.mapContainer, styles.nativeMapFallback]}>
-          <Text style={styles.nativeMapText}>Karte lädt auf dem Gerät...</Text>
+          <Ionicons name="map" size={48} color={COLORS.textMuted} />
+          <Text style={styles.nativeMapText}>Karte wird in der App geladen</Text>
+          <Text style={styles.nativeMapSubtext}>Verwende die Expo Go App</Text>
         </View>
       )}
 
@@ -424,7 +485,7 @@ export default function MapScreen() {
       {/* Bottom Sheet */}
       {selectedStation && (
         <Animated.View style={[styles.bottomSheet, { transform: [{ translateY: sheetTranslateY }] }]}>
-          <TouchableOpacity style={styles.sheetHandle} onPress={handleCloseSheet}>
+          <TouchableOpacity style={styles.sheetHandle} onPress={handleCloseSheet} activeOpacity={0.7}>
             <View style={styles.handleBar} />
           </TouchableOpacity>
 
@@ -440,11 +501,11 @@ export default function MapScreen() {
             <View style={styles.sheetMeta}>
               <View style={[styles.statusBadge, selectedStation.is_open ? styles.openBadge : styles.closedBadge]}>
                 <Text style={[styles.statusText, selectedStation.is_open ? styles.openText : styles.closedText]}>
-                  {selectedStation.is_open ? 'Geöffnet' : 'Geschlossen'}
+                  {selectedStation.is_open ? 'Ge\u00F6ffnet' : 'Geschlossen'}
                 </Text>
               </View>
               <View style={styles.distRow}>
-                <Ionicons name="navigate" size={14} color="#22C55E" />
+                <Ionicons name="location" size={14} color="#FF453A" />
                 <Text style={styles.distText}>{formatDistance(selectedStation.dist)} entfernt</Text>
               </View>
             </View>
@@ -455,14 +516,20 @@ export default function MapScreen() {
             {(['diesel', 'e5', 'e10'] as FuelType[]).map((ft) => {
               const isActive = selectedFuelType === ft;
               return (
-                <View key={ft} style={[styles.priceCard, isActive && styles.priceCardActive]}>
+                <TouchableOpacity
+                  key={ft}
+                  testID={`sheet-price-${ft}`}
+                  style={[styles.priceCard, isActive && styles.priceCardActive]}
+                  onPress={() => setSelectedFuelType(ft)}
+                  activeOpacity={0.7}
+                >
                   <Text style={[styles.priceLabel, isActive && styles.priceLabelActive]}>
                     {ft === 'diesel' ? 'DIESEL' : ft === 'e5' ? 'SUPER E5' : 'SUPER E10'}
                   </Text>
                   <Text style={[styles.priceValue, isActive && styles.priceValueActive]}>
                     {formatPrice(selectedStation[ft])}
                   </Text>
-                </View>
+                </TouchableOpacity>
               );
             })}
           </View>
@@ -473,6 +540,7 @@ export default function MapScreen() {
               testID="sheet-navigate-btn"
               style={styles.navigateBtn}
               onPress={() => handleNavigate(selectedStation)}
+              activeOpacity={0.8}
             >
               <Ionicons name="navigate" size={18} color="#0A0A0B" />
               <Text style={styles.navigateBtnText}>Navigation</Text>
@@ -481,14 +549,16 @@ export default function MapScreen() {
               testID="sheet-detail-btn"
               style={styles.detailBtn}
               onPress={() => router.push(`/station/${selectedStation.id}`)}
+              activeOpacity={0.8}
             >
               <Ionicons name="information-circle-outline" size={18} color="#22C55E" />
               <Text style={styles.detailBtnText}>Details</Text>
             </TouchableOpacity>
             <TouchableOpacity
               testID="sheet-fav-btn"
-              style={styles.favBtn}
+              style={[styles.favBtn, isFavorite(selectedStation.id) && styles.favBtnActive]}
               onPress={() => handleFavoriteToggle(selectedStation)}
+              activeOpacity={0.7}
             >
               <Ionicons
                 name={isFavorite(selectedStation.id) ? 'heart' : 'heart-outline'}
@@ -501,7 +571,7 @@ export default function MapScreen() {
       )}
 
       {/* Station count badge */}
-      {!selectedStation && stations.length > 0 && (
+      {!selectedStation && stations.length > 0 && !isLoading && (
         <View style={styles.countBadge}>
           <Ionicons name="location" size={14} color="#22C55E" />
           <Text style={styles.countText}>{stations.filter(s => s.is_open).length} Tankstellen</Text>
@@ -510,8 +580,6 @@ export default function MapScreen() {
     </View>
   );
 }
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
@@ -524,10 +592,16 @@ const styles = StyleSheet.create({
   nativeMapFallback: {
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 12,
   },
   nativeMapText: {
     color: COLORS.textSecondary,
     fontSize: 16,
+    fontWeight: '600',
+  },
+  nativeMapSubtext: {
+    color: COLORS.textMuted,
+    fontSize: 13,
   },
   overlay: {
     position: 'absolute',
@@ -605,6 +679,8 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.sm,
     borderRadius: RADIUS.xl,
     marginTop: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   loadingText: {
     fontSize: 13,
@@ -624,6 +700,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: COLORS.border,
     ...SHADOWS.elevated,
+    zIndex: 20,
   },
   sheetHandle: {
     alignItems: 'center',
@@ -700,7 +777,7 @@ const styles = StyleSheet.create({
     borderColor: '#2A2F38',
   },
   priceCardActive: {
-    backgroundColor: 'rgba(34,197,94,0.12)',
+    backgroundColor: 'rgba(34,197,94,0.08)',
     borderColor: '#22C55E',
   },
   priceLabel: {
@@ -768,6 +845,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2A2F38',
   },
+  favBtnActive: {
+    borderColor: '#EF4444',
+    backgroundColor: 'rgba(239,68,68,0.1)',
+  },
   countBadge: {
     position: 'absolute',
     bottom: 96,
@@ -780,6 +861,7 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
+    zIndex: 15,
   },
   countText: {
     fontSize: 13,
