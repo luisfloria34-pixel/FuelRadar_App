@@ -56,6 +56,13 @@
           "icon": "./assets/images/notification-icon.png",
           "color": "#32D74B"
         }
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsVersion": "11.8.0",
+          "RNMapboxMapsDownloadToken": "sk.placeholder"
+        }
       ]
     ],
     "experiments": {
