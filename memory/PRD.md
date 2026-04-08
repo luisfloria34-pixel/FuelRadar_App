@@ -5,8 +5,8 @@ FuelRadar ist eine Premium-Mobil-App für Fahrer in Deutschland. Luxuriöses dun
 
 ## Tech Stack
 - **Frontend**: Expo (React Native), TypeScript, Expo Router, Zustand
-- **Backend**: FastAPI (Python)
-- **APIs**: Tankerkönig (Kraftstoffpreise), Nominatim (Geocoding)
+- **Backend**: FastAPI (Python), MongoDB
+- **APIs**: Tankerkönig (Kraftstoffpreise), Nominatim (Geocoding), Mapbox GL JS (Karte)
 
 ## Design System
 - Background: #0A0A0B | Card: #14161A | Border: #2A2F38
@@ -39,6 +39,20 @@ FuelRadar ist eine Premium-Mobil-App für Fahrer in Deutschland. Luxuriöses dun
 - ✅ **Farbige Fuel-Dots** und Fuel-Badges
 - ✅ **Rank-Badges** bei Preissortierung (Günstigster, 2./3. Platz)
 
+### Karte / Map Screen (DONE - April 2026)
+- ✅ **Mapbox GL JS** via CDN (dark-v11 Theme) für Web
+- ✅ **@rnmapbox/maps** Plugin für native Builds
+- ✅ **Custom Preis-Marker**: Grüne Pill (#22C55E) für günstigste, dunkelgraue (#2A2F38) für andere
+- ✅ **Ausgewählter Marker**: Weiß mit grünem Rand + Glow-Effekt
+- ✅ **Bottom Sheet**: Marke, Name, Adresse, Geöffnet/Geschlossen, Entfernung, 3 Preiskarten (Diesel/E5/E10)
+- ✅ **Navigation-Button**: Öffnet Apple Maps (iOS) / Google Maps (Android/Web)
+- ✅ **Details-Button**: Navigiert zur Station-Detail-Seite
+- ✅ **Favorit-Button**: Herz-Icon zum Favorisieren
+- ✅ **PLZ-Suche auf Karte**: Nominatim Geocoding → Map recenter + Marker reload
+- ✅ **Kraftstoff-Filter**: Diesel/E5/E10 → Marker-Preise aktualisieren
+- ✅ **Radius-Filter**: 2/5/10/25 km → Tankstellen filtern
+- ✅ **Station-Count-Badge**: z.B. "152 Tankstellen"
+
 ## API Endpoints
 | Endpoint | Method | Description |
 |----------|--------|-------------|
@@ -49,7 +63,7 @@ FuelRadar ist eine Premium-Mobil-App für Fahrer in Deutschland. Luxuriöses dun
 
 ## Ausstehend
 - ⬜ Device-Registrierung (Push Notifications)
-- ⬜ PostgreSQL & Redis für Produktion
+- ⬜ PostgreSQL & Redis für Produktion (aktuell MongoDB)
 
 ## Backlog
 - ⬜ User Authentication
@@ -58,3 +72,4 @@ FuelRadar ist eine Premium-Mobil-App für Fahrer in Deutschland. Luxuriöses dun
 - ⬜ Routenplanung mit Tankstopps
 - ⬜ Preisvergleich teilen
 - ⬜ Auto-Vervollständigung bei PLZ-Suche
+- ⬜ Offline-Modus mit gecachten Preisen
