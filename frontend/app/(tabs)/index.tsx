@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -39,6 +39,13 @@ export default function HomeScreen() {
     searchRadius,
     searchLocationName,
   } = useStore();
+
+  const greeting = useMemo(() => {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 12) return 'Guten Morgen \u26FD';
+    if (h >= 12 && h < 18) return 'Bereit zum Tanken? \u26FD';
+    return 'Jetzt g\u00FCnstig tanken \u26FD';
+  }, []);
 
   const [refreshing, setRefreshing] = useState(false);
   const [cheapestStation, setCheapestStation] = useState<Station | null>(null);
@@ -203,7 +210,7 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.greetingRow}>
-            <Text style={styles.greeting} testID="home-greeting">Guten Tag 👋</Text>
+            <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
             <TouchableOpacity
               testID="settings-btn"
               style={styles.settingsButton}
