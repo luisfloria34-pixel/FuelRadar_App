@@ -199,9 +199,6 @@ export default function MapScreen() {
               </TouchableOpacity>
             )}
           </View>
-          <TouchableOpacity testID="map-search-btn" style={styles.searchBtn} onPress={handleSearch} disabled={isSearching}>
-            {isSearching ? <ActivityIndicator size="small" color={COLORS.textPrimary} /> : <Ionicons name="options" size={20} color={COLORS.textPrimary} />}
-          </TouchableOpacity>
         </View>
 
         {/* Fuel pills */}
@@ -316,12 +313,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: COLORS.border,
   },
   searchInput: { flex: 1, marginLeft: SPACING.sm, fontSize: 15, color: COLORS.textPrimary },
-  searchBtn: {
-    width: 44, height: 44, borderRadius: RADIUS.xl,
-    backgroundColor: 'rgba(20,22,26,0.92)', alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: COLORS.border,
-  },
-  pillRow: { marginTop: SPACING.sm },
+pillRow: { marginTop: SPACING.sm },
   pillScroll: { gap: SPACING.xs },
   pill: {
     paddingHorizontal: 18, paddingVertical: SPACING.sm, borderRadius: RADIUS.xl,
