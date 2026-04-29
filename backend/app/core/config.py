@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     # Cache TTL
     cache_ttl_seconds: int = int(os.getenv("CACHE_TTL_SECONDS", "60"))
     
+    # Supabase
+    supabase_url: Optional[str] = os.getenv("SUPABASE_URL")
+    supabase_service_key: Optional[str] = os.getenv("SUPABASE_SERVICE_KEY")
+
     # App settings
     app_name: str = "FuelRadar API"
     app_version: str = "1.0.0"

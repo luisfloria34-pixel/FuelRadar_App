@@ -17,7 +17,9 @@ source "$BACKEND/venv/bin/activate"
 
 echo "[backend] Installing dependencies..."
 pip install --quiet --upgrade pip
-pip install --quiet -r "$BACKEND/requirements.txt"
+pip install --quiet fastapi "uvicorn[standard]" sqlmodel asyncpg psycopg2-binary \
+  pydantic-settings python-dotenv httpx redis aiohttp APScheduler \
+  python-jose passlib bcrypt greenlet
 
 # ── Start backend in background ───────────────────────────
 echo "[backend] Starting on http://localhost:8001 ..."
