@@ -27,6 +27,8 @@ export default function HomeScreen() {
   const {
     location,
     setLocation,
+    locationPermissionStatus,
+    setLocationPermissionStatus,
     stations,
     setStations,
     selectedFuelType,
@@ -55,10 +57,6 @@ export default function HomeScreen() {
   const [locationPermanentlyDenied, setLocationPermanentlyDenied] = useState(false);
   const locationResolveRef = useRef<((loc: { latitude: number; longitude: number } | null) => void) | null>(null);
 
-  useEffect(() => {
-    initializeApp();
-  }, []);
-
   const getGPS = async (): Promise<{ latitude: number; longitude: number } | null> => {
     try {
       const loc = await Location.getCurrentPositionAsync({
@@ -72,21 +70,32 @@ export default function HomeScreen() {
     }
   };
 
+  // Reconcile stored permission state with actual OS state each app launch
+  const resolvePermissionStatus = useCallback(async () => {
+    const { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
+    if (status === 'granted') return 'granted' as const;
+    if (!canAskAgain) return 'permanently_denied' as const;
+    // If we stored 'granted' but OS says otherwise → user revoked in settings
+    if (locationPermissionStatus === 'granted') return 'unknown' as const;
+    return locationPermissionStatus;
+  }, [locationPermissionStatus]);
+
   const requestLocation = async (): Promise<{ latitude: number; longitude: number } | null> => {
-    // Already granted — skip modal, get GPS directly
-    const existing = await Location.getForegroundPermissionsAsync();
-    if (existing.status === 'granted') {
-      return getGPS();
+    const resolved = await resolvePermissionStatus();
+
+    if (resolved === 'granted') {
+      const gps = await getGPS();
+      if (gps) setLocation(gps);
+      return gps;
     }
-    // Permanently denied — show modal with Settings button
-    if (!existing.canAskAgain) {
-      setLocationPermanentlyDenied(true);
-      return new Promise((resolve) => {
-        locationResolveRef.current = resolve;
-        setShowLocationModal(true);
-      });
+
+    if (resolved === 'denied') {
+      setLocationDenied(true);
+      return null;
     }
-    // First-time or soft-denied — show our pre-permission modal
+
+    const isPermanent = resolved === 'permanently_denied';
+    setLocationPermanentlyDenied(isPermanent);
     return new Promise((resolve) => {
       locationResolveRef.current = resolve;
       setShowLocationModal(true);
@@ -97,22 +106,33 @@ export default function HomeScreen() {
     setShowLocationModal(false);
     const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
     if (status === 'granted') {
+      await setLocationPermissionStatus('granted');
       setLocationDenied(false);
       setLocationPermanentlyDenied(false);
-      const loc = await getGPS();
-      locationResolveRef.current?.(loc);
+      const gps = await getGPS();
+      if (gps) setLocation(gps);
+      locationResolveRef.current?.(gps);
+      // Navigate to map so user sees their location immediately
+      router.push('/(tabs)/map');
     } else {
+      const permStatus = canAskAgain ? 'denied' : 'permanently_denied';
+      await setLocationPermissionStatus(permStatus);
       setLocationPermanentlyDenied(!canAskAgain);
       setLocationDenied(true);
       locationResolveRef.current?.(null);
     }
   };
 
-  const handleLocationDeny = () => {
+  const handleLocationDeny = async () => {
     setShowLocationModal(false);
+    await setLocationPermissionStatus('denied');
     setLocationDenied(true);
     locationResolveRef.current?.(null);
   };
+
+  useEffect(() => {
+    initializeApp();
+  }, []);
 
   const fetchStations = useCallback(async (lat?: number, lng?: number, rad?: number) => {
     setIsLoading(true);

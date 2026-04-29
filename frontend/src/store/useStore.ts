@@ -13,6 +13,10 @@ interface AppState {
   // Location
   location: Location | null;
   setLocation: (location: Location) => void;
+
+  // Location permission
+  locationPermissionStatus: 'unknown' | 'granted' | 'denied' | 'permanently_denied';
+  setLocationPermissionStatus: (status: 'unknown' | 'granted' | 'denied' | 'permanently_denied') => Promise<void>;
   
   // Selected fuel type
   selectedFuelType: FuelType;
@@ -65,6 +69,8 @@ const FAVORITES_KEY = '@fuelradar_favorites';
 const ALERTS_KEY = '@fuelradar_alerts';
 const ONBOARDING_KEY = '@fuelradar_onboarding';
 const LANGUAGE_KEY = '@fuelradar_language';
+const LOCATION_KEY = '@fuelradar_location';
+const LOCATION_PERMISSION_KEY = '@fuelradar_location_permission';
 
 // Safe storage wrapper that handles web/native differences
 const safeStorage = {
@@ -112,7 +118,17 @@ export const useStore = create<AppState>((set, get) => ({
   
   // Location
   location: null,
-  setLocation: (location) => set({ location }),
+  setLocation: (location) => {
+    set({ location });
+    safeStorage.setItem(LOCATION_KEY, JSON.stringify(location));
+  },
+
+  // Location permission
+  locationPermissionStatus: 'unknown',
+  setLocationPermissionStatus: async (status) => {
+    set({ locationPermissionStatus: status });
+    await safeStorage.setItem(LOCATION_PERMISSION_KEY, status);
+  },
   
   // Selected fuel type
   selectedFuelType: 'e10',
@@ -224,13 +240,22 @@ export const useStore = create<AppState>((set, get) => ({
   // Initialize app - load all stored data
   initializeApp: async () => {
     try {
-      // Load language
-      const storedLang = await safeStorage.getItem(LANGUAGE_KEY);
+      const [storedLang, storedLocation, storedPermission] = await Promise.all([
+        safeStorage.getItem(LANGUAGE_KEY),
+        safeStorage.getItem(LOCATION_KEY),
+        safeStorage.getItem(LOCATION_PERMISSION_KEY),
+      ]);
+
       if (storedLang && (storedLang === 'de' || storedLang === 'en')) {
         set({ language: storedLang as Language });
       }
-      
-      // Load other data
+      if (storedLocation) {
+        try { set({ location: JSON.parse(storedLocation) }); } catch {}
+      }
+      if (storedPermission) {
+        set({ locationPermissionStatus: storedPermission as any });
+      }
+
       await get().loadOnboardingStatus();
       await get().loadFavorites();
       await get().loadAlerts();

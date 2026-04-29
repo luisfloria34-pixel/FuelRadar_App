@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
-import MapView, { Marker, UrlTile, Region } from 'react-native-maps';
+import { View, Text, StyleSheet } from 'react-native';
+import MapView, { Marker, UrlTile } from 'react-native-maps';
 import { COLORS, RADIUS } from '../../constants/theme';
 import { Station, FuelType } from '../../types';
 
 interface MapRendererProps {
   center: { lat: number; lng: number };
+  userLocation?: { lat: number; lng: number } | null;
   stations: Station[];
   selectedFuelType: FuelType;
   cheapestPrice: number | null;
@@ -28,14 +29,34 @@ function PriceMarker({ price, isCheapest, isSelected }: { price: string; isCheap
   );
 }
 
+function UserMarker() {
+  return (
+    <View style={ms.userOuter}>
+      <View style={ms.userInner} />
+    </View>
+  );
+}
+
 const ms = StyleSheet.create({
   wrapper: { alignItems: 'center' },
   pill: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 2, borderColor: 'transparent' },
   text: { fontSize: 13, fontWeight: '700' },
   arrow: { width: 0, height: 0, borderLeftWidth: 7, borderRightWidth: 7, borderTopWidth: 7, borderLeftColor: 'transparent', borderRightColor: 'transparent', marginTop: -1 },
+  userOuter: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: 'rgba(34,197,94,0.25)',
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: '#22C55E',
+  },
+  userInner: {
+    width: 10, height: 10, borderRadius: 5,
+    backgroundColor: '#22C55E',
+  },
 });
 
-export default function MapRenderer({ center, stations, selectedFuelType, cheapestPrice, selectedStation, onSelectStation, mapRef }: MapRendererProps) {
+export default function MapRenderer({
+  center, userLocation, stations, selectedFuelType, cheapestPrice, selectedStation, onSelectStation, mapRef,
+}: MapRendererProps) {
   const filteredStations = stations.filter(s => s.is_open && s[selectedFuelType] != null);
 
   return (
@@ -45,15 +66,28 @@ export default function MapRenderer({ center, stations, selectedFuelType, cheape
       initialRegion={{ latitude: center.lat, longitude: center.lng, latitudeDelta: 0.08, longitudeDelta: 0.08 }}
       mapType="none"
       rotateEnabled={false}
-      showsUserLocation
+      showsUserLocation={false}
       showsMyLocationButton={false}
     >
       <UrlTile urlTemplate="https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png" maximumZ={19} />
+
+      {/* Custom user location marker */}
+      {userLocation && (
+        <Marker
+          coordinate={{ latitude: userLocation.lat, longitude: userLocation.lng }}
+          anchor={{ x: 0.5, y: 0.5 }}
+          tracksViewChanges={false}
+          zIndex={999}
+        >
+          <UserMarker />
+        </Marker>
+      )}
+
       {filteredStations.map((station) => {
         const price = station[selectedFuelType] as number;
         const isCheapest = cheapestPrice !== null && Math.abs(price - cheapestPrice) < 0.001;
         const isSelected = selectedStation?.id === station.id;
-        const priceText = price.toFixed(2).replace('.', ',') + ' \u20AC';
+        const priceText = price.toFixed(2).replace('.', ',') + ' €';
         return (
           <Marker
             key={station.id}

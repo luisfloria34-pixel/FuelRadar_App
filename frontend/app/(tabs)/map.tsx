@@ -35,6 +35,7 @@ export default function MapScreen() {
   const router = useRouter();
   const {
     location, setLocation,
+    locationPermissionStatus, setLocationPermissionStatus,
     stations, setStations,
     selectedFuelType, setSelectedFuelType,
     isLoading, setIsLoading,
@@ -77,7 +78,15 @@ export default function MapScreen() {
 
   const loadLocationAndStations = useCallback(async (granted: boolean) => {
     const rad = searchRadiusRef.current;
-    const loc = locationRef.current;
+    const cached = locationRef.current;
+
+    // Show cached location on map immediately while GPS loads
+    if (cached) {
+      const c = { lat: cached.latitude, lng: cached.longitude };
+      setMapCenter(c);
+      fetchStations(c.lat, c.lng, rad);
+    }
+
     if (granted) {
       try {
         const pos = await Location.getCurrentPositionAsync({
@@ -90,15 +99,14 @@ export default function MapScreen() {
         setLocation({ latitude: c.lat, longitude: c.lng });
         fetchStations(c.lat, c.lng, rad);
         setLocationDenied(false);
+        // Animate map to real GPS position
+        flyTo(c, 13);
         return;
       } catch {}
     }
-    setLocationDenied(true);
-    if (loc) {
-      const c = { lat: loc.latitude, lng: loc.longitude };
-      setMapCenter(c);
-      fetchStations(c.lat, c.lng, rad);
-    } else {
+
+    setLocationDenied(!granted);
+    if (!cached) {
       setLocation({ latitude: DEFAULT_CENTER.lat, longitude: DEFAULT_CENTER.lng });
       fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, rad);
     }
@@ -108,9 +116,12 @@ export default function MapScreen() {
     setShowLocationModal(false);
     const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
     if (status === 'granted') {
+      await setLocationPermissionStatus('granted');
       setLocationPermanentlyDenied(false);
       await loadLocationAndStations(true);
     } else {
+      const permStatus = canAskAgain ? 'denied' : 'permanently_denied';
+      await setLocationPermissionStatus(permStatus);
       setLocationPermanentlyDenied(!canAskAgain);
       await loadLocationAndStations(false);
     }
@@ -118,18 +129,39 @@ export default function MapScreen() {
 
   const handleLocationDeny = async () => {
     setShowLocationModal(false);
+    await setLocationPermissionStatus('denied');
     await loadLocationAndStations(false);
   };
 
   useEffect(() => {
     (async () => {
       const { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
+
       if (status === 'granted') {
+        // OS says granted — load GPS
         await loadLocationAndStations(true);
-      } else {
-        setLocationPermanentlyDenied(!canAskAgain && status === 'denied');
-        setShowLocationModal(true);
+        return;
       }
+
+      // OS revoked a previously granted permission → reset stored state
+      if (locationPermissionStatus === 'granted') {
+        await setLocationPermissionStatus('unknown');
+      }
+
+      if (locationPermissionStatus === 'denied') {
+        // User already said "Nicht jetzt" before — use cached/default, no modal
+        await loadLocationAndStations(false);
+        return;
+      }
+
+      if (locationPermissionStatus === 'permanently_denied' || !canAskAgain) {
+        setLocationPermanentlyDenied(true);
+        setShowLocationModal(true);
+        return;
+      }
+
+      // 'unknown' — first time, show our modal
+      setShowLocationModal(true);
     })();
   }, []);
 
@@ -220,6 +252,7 @@ export default function MapScreen() {
       {/* Map */}
       <MapRenderer
         center={mapCenter}
+        userLocation={location ? { lat: location.latitude, lng: location.longitude } : null}
         stations={stations}
         selectedFuelType={selectedFuelType}
         cheapestPrice={cheapestPrice}
