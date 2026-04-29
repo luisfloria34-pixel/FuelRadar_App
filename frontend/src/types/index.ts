@@ -32,10 +32,13 @@ export type FuelType = 'diesel' | 'e5' | 'e10';
 
 export interface Alert {
   id: string;
+  alert_type?: string;
   station_id?: string;
   station_name?: string;
   fuel_type: FuelType;
   threshold_price: number;
+  lat?: number;
+  lng?: number;
   is_active: boolean;
   created_at: string;
 }

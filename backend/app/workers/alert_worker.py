@@ -146,13 +146,13 @@ class AlertWorker:
                 # Get alert state
                 state = await self._get_alert_state(session, alert.id)
                 
-                # Get nearby stations (use alert location if available, else default)
-                lat = alert.lat or 52.520008
-                lng = alert.lng or 13.404954
-                
+                if not alert.lat or not alert.lng:
+                    logger.debug(f"Threshold alert {alert.id} has no location, skipping")
+                    continue
+
                 result = await tankerkoenig_service.get_nearby_stations(
-                    lat=lat,
-                    lng=lng,
+                    lat=alert.lat,
+                    lng=alert.lng,
                     radius=alert.radius_km,
                     fuel_type=alert.fuel_type,
                     sort="price"

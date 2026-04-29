@@ -33,6 +33,7 @@ from app.routes.stations import router as stations_router
 from app.routes.devices import router as devices_router
 from app.routes.favorites import router as favorites_router
 from app.routes.alerts import router as alerts_router
+from app.routes.geocode import router as geocode_router
 
 # Import services for legacy endpoints
 from app.services.tankerkoenig import tankerkoenig_service
@@ -115,7 +116,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -165,55 +166,64 @@ async def health_check():
 
 # ============== LEGACY ENDPOINTS (for backward compatibility) ==============
 
-@api_router.get("/geocode")
-async def geocode_search(
-    q: str = Query(..., description="PLZ oder Ortsname"),
-    country: str = Query("de", description="Ländercode")
-):
-    """PLZ oder Ortsnamen in Koordinaten umwandeln via OpenStreetMap Nominatim"""
-    import httpx as _httpx
-    
-    if not q or len(q.strip()) < 2:
-        return {"ok": False, "message": "Suchbegriff zu kurz", "results": []}
-    
+from pydantic import BaseModel as _BaseModel
+
+class _PushTokenBody(_BaseModel):
+    token: str
+    device_id: str
+    platform: Optional[str] = None
+    locale: str = "de"
+
+class _AnalyticsBody(_BaseModel):
+    query: Optional[str] = None
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    results_count: Optional[int] = None
+
+
+@api_router.post("/push-tokens")
+async def register_push_token(body: _PushTokenBody):
+    """Register or update a device push token (maps to device registration)"""
+    from app.core.database import async_session_factory
+    from app.models.device import Device
+    from sqlmodel import select
+    from datetime import datetime
+
+    if not async_session_factory:
+        return {"ok": True, "message": "db not available"}
+
     try:
-        async with _httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(
-                "https://nominatim.openstreetmap.org/search",
-                params={
-                    "q": q.strip(),
-                    "format": "json",
-                    "countrycodes": country,
-                    "limit": 5,
-                    "addressdetails": 1,
-                },
-                headers={
-                    "User-Agent": "FuelRadar/1.0 (fuel price comparison app)",
-                    "Accept-Language": "de",
-                },
+        async with async_session_factory() as session:
+            result = await session.execute(
+                select(Device).where(Device.device_uuid == body.device_id)
             )
-            
-            if response.status_code != 200:
-                return {"ok": False, "message": "Geocoding fehlgeschlagen", "results": []}
-            
-            data = response.json()
-            results = []
-            for item in data:
-                address = item.get("address", {})
-                results.append({
-                    "lat": float(item["lat"]),
-                    "lng": float(item["lon"]),
-                    "display_name": item.get("display_name", ""),
-                    "postcode": address.get("postcode", ""),
-                    "city": address.get("city") or address.get("town") or address.get("village") or address.get("municipality", ""),
-                    "state": address.get("state", ""),
-                })
-            
-            return {"ok": True, "results": results}
-    
+            device = result.scalar_one_or_none()
+            if device:
+                device.expo_push_token = body.token
+                if body.platform:
+                    device.platform = body.platform
+                device.locale = body.locale
+                device.updated_at = datetime.utcnow()
+            else:
+                device = Device(
+                    device_uuid=body.device_id,
+                    expo_push_token=body.token,
+                    platform=body.platform,
+                    locale=body.locale,
+                )
+            session.add(device)
+            await session.commit()
     except Exception as e:
-        logger.error(f"Geocoding error: {e}")
-        return {"ok": False, "message": str(e), "results": []}
+        logger.warning(f"push-tokens registration error: {e}")
+
+    return {"ok": True}
+
+
+@api_router.post("/analytics/search")
+async def log_search(body: _AnalyticsBody):
+    """Log search analytics"""
+    logger.debug(f"Search log: query={body.query} lat={body.lat} lng={body.lng} results={body.results_count}")
+    return {"ok": True}
 
 
 @api_router.get("/stations/prices/list")
@@ -253,6 +263,9 @@ async def legacy_station_detail(station_id: str):
 
 
 # ============== INCLUDE ROUTERS ==============
+
+# Include geocode router at /api/geocode
+api_router.include_router(geocode_router)
 
 # Include new modular routes under /api/v2
 v2_router = APIRouter(prefix="/v2")

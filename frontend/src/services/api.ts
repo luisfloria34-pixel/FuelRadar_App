@@ -24,13 +24,11 @@ export interface StationDetailResponse {
 }
 
 export const fuelApi = {
-  // Geocode PLZ or city
   geocode: async (query: string): Promise<any> => {
     const response = await api.get('/geocode', { params: { q: query } });
     return response.data;
   },
 
-  // Get nearby stations
   getNearbyStations: async (
     lat: number,
     lng: number,
@@ -44,13 +42,11 @@ export const fuelApi = {
     return response.data;
   },
 
-  // Get station detail
   getStationDetail: async (stationId: string): Promise<StationDetailResponse> => {
     const response = await api.get(`/stations/${stationId}`);
     return response.data;
   },
 
-  // Get prices for multiple stations
   getPrices: async (ids: string[]): Promise<any> => {
     const response = await api.get('/stations/prices/list', {
       params: { ids: ids.join(',') },
@@ -58,19 +54,79 @@ export const fuelApi = {
     return response.data;
   },
 
-  // Register push token
-  registerPushToken: async (token: string, deviceId: string): Promise<any> => {
-    const response = await api.post('/push-tokens', { token, device_id: deviceId });
+  registerDevice: async (
+    deviceUuid: string,
+    pushToken?: string,
+    platform?: string,
+    locale: string = 'de'
+  ): Promise<any> => {
+    const response = await api.post('/v2/devices', {
+      device_uuid: deviceUuid,
+      expo_push_token: pushToken || null,
+      platform: platform || null,
+      locale,
+    });
     return response.data;
   },
 
-  // Log search analytics
-  logSearch: async (data: any): Promise<any> => {
-    const response = await api.post('/analytics/search', data);
+  // Favorites
+  getFavorites: async (deviceUuid: string): Promise<any[]> => {
+    const response = await api.get(`/v2/favorites/${deviceUuid}`);
     return response.data;
   },
 
-  // Health check
+  addFavorite: async (deviceUuid: string, data: {
+    station_id: string;
+    station_name: string;
+    station_brand: string;
+    street?: string;
+    place?: string;
+    lat: number;
+    lng: number;
+  }): Promise<any> => {
+    const response = await api.post(`/v2/favorites/${deviceUuid}`, data);
+    return response.data;
+  },
+
+  removeFavorite: async (deviceUuid: string, stationId: string): Promise<any> => {
+    const response = await api.delete(`/v2/favorites/${deviceUuid}/${stationId}`);
+    return response.data;
+  },
+
+  // Alerts
+  getAlerts: async (deviceUuid: string): Promise<any[]> => {
+    const response = await api.get(`/v2/alerts/${deviceUuid}`);
+    return response.data;
+  },
+
+  createAlert: async (deviceUuid: string, data: {
+    alert_type: string;
+    fuel_type: string;
+    threshold_price?: number;
+    station_id?: string;
+    station_name?: string;
+    lat?: number;
+    lng?: number;
+    radius_km?: number;
+  }): Promise<any> => {
+    const response = await api.post(`/v2/alerts/${deviceUuid}`, data);
+    return response.data;
+  },
+
+  updateAlert: async (deviceUuid: string, alertId: number, data: {
+    threshold_price?: number;
+    radius_km?: number;
+    is_active?: boolean;
+  }): Promise<any> => {
+    const response = await api.patch(`/v2/alerts/${deviceUuid}/${alertId}`, data);
+    return response.data;
+  },
+
+  deleteAlert: async (deviceUuid: string, alertId: number): Promise<any> => {
+    const response = await api.delete(`/v2/alerts/${deviceUuid}/${alertId}`);
+    return response.data;
+  },
+
   healthCheck: async (): Promise<any> => {
     const response = await api.get('/health');
     return response.data;

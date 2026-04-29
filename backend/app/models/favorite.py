@@ -1,10 +1,12 @@
 from sqlmodel import SQLModel, Field
+from sqlalchemy import UniqueConstraint
 from typing import Optional
 from datetime import datetime
 
 class FavoriteStation(SQLModel, table=True):
     __tablename__ = "favorite_stations"
-    
+    __table_args__ = (UniqueConstraint("device_uuid", "station_id", name="uq_favorite_device_station"),)
+
     id: Optional[int] = Field(default=None, primary_key=True)
     device_uuid: str = Field(index=True)
     station_id: str = Field(index=True)
@@ -15,12 +17,6 @@ class FavoriteStation(SQLModel, table=True):
     lat: float
     lng: float
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    
-    class Config:
-        # Composite unique constraint
-        schema_extra = {
-            "unique_together": [("device_uuid", "station_id")]
-        }
 
 class FavoriteCreate(SQLModel):
     station_id: str
