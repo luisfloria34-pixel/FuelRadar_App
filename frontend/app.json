@@ -14,7 +14,8 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Find fuel stations near your location",
         "NSLocationAlwaysUsageDescription": "Get alerts when nearby prices drop",
-        "NSUserNotificationsUsageDescription": "FuelRadar sends you a notification when fuel prices drop below your set threshold."
+        "NSUserNotificationsUsageDescription": "FuelRadar sends you a notification when fuel prices drop below your set threshold.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
