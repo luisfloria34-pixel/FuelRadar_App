@@ -13,7 +13,8 @@
       "bundleIdentifier": "com.fuelradar.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Find fuel stations near your location",
-        "NSLocationAlwaysUsageDescription": "Get alerts when nearby prices drop"
+        "NSLocationAlwaysUsageDescription": "Get alerts when nearby prices drop",
+        "NSUserNotificationsUsageDescription": "FuelRadar sends you a notification when fuel prices drop below your set threshold."
       }
     },
     "android": {
@@ -25,7 +26,9 @@
       "package": "com.fuelradar.app",
       "permissions": [
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
       ]
     },
     "web": {

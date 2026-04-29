@@ -20,6 +20,7 @@ export const COLORS = {
   accentBlue: '#3B82F6',
   accentOrange: '#FF9F0A',
   accentRed: '#FF453A',
+  accentAmber: '#FFB340',
   accentPurple: '#A855F7',
   
   // Fuel type colors

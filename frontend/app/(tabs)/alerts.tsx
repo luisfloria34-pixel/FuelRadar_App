@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,21 +11,57 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 import { Alert as AlertType, FuelType } from '../../src/types';
+import {
+  getNotificationPermissionStatus,
+  requestNotificationPermissions,
+  registerForPushNotifications,
+  PermissionStatus,
+} from '../../src/hooks/useNotifications';
 
 export default function AlertsScreen() {
-  const { alerts, addAlert, removeAlert, toggleAlert } = useStore();
+  const { alerts, addAlert, removeAlert, toggleAlert, deviceId, language } = useStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [newAlert, setNewAlert] = useState({
     fuel_type: 'e10' as FuelType,
     threshold_price: '',
     station_name: '',
   });
+  const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('undetermined');
+
+  // Re-check permission every time the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      getNotificationPermissionStatus().then(setPermissionStatus);
+    }, [])
+  );
+
+  const handleEnableNotifications = async () => {
+    if (permissionStatus === 'denied') {
+      // On iOS "denied" means permanently denied — must go to Settings
+      Alert.alert(
+        'Benachrichtigungen deaktiviert',
+        'Öffne die Einstellungen und aktiviere Benachrichtigungen für FuelRadar.',
+        [
+          { text: 'Abbrechen', style: 'cancel' },
+          { text: 'Einstellungen', onPress: () => Linking.openSettings() },
+        ]
+      );
+      return;
+    }
+    const status = await requestNotificationPermissions();
+    setPermissionStatus(status);
+    if (status === 'granted' && deviceId) {
+      registerForPushNotifications(deviceId, language);
+    }
+  };
 
   const handleCreateAlert = async () => {
     const price = parseFloat(newAlert.threshold_price.replace(',', '.'));
@@ -43,6 +79,11 @@ export default function AlertsScreen() {
 
     setModalVisible(false);
     setNewAlert({ fuel_type: 'e10', threshold_price: '', station_name: '' });
+
+    // Prompt for notification permission if not yet granted
+    if (permissionStatus !== 'granted') {
+      setTimeout(() => handleEnableNotifications(), 400);
+    }
   };
 
   const handleDeleteAlert = (alertId: string) => {
@@ -85,6 +126,30 @@ export default function AlertsScreen() {
           <Ionicons name="add" size={24} color={COLORS.background} />
         </TouchableOpacity>
       </View>
+
+      {/* Notification permission banner */}
+      {permissionStatus !== 'granted' && (
+        <TouchableOpacity
+          style={styles.permissionBanner}
+          onPress={handleEnableNotifications}
+          activeOpacity={0.85}
+        >
+          <View style={styles.permissionBannerLeft}>
+            <View style={styles.permissionIconWrap}>
+              <Ionicons name="notifications-off-outline" size={20} color={COLORS.accentAmber} />
+            </View>
+            <View>
+              <Text style={styles.permissionTitle}>Benachrichtigungen deaktiviert</Text>
+              <Text style={styles.permissionSubtitle}>
+                {permissionStatus === 'denied'
+                  ? 'In den Einstellungen aktivieren'
+                  : 'Tippe um Alarme zu erhalten'}
+              </Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={COLORS.accentAmber} />
+        </TouchableOpacity>
+      )}
 
       <ScrollView
         style={styles.scrollView}
@@ -139,6 +204,14 @@ export default function AlertsScreen() {
                   </View>
                 )}
               </View>
+
+              {/* Active notification indicator */}
+              {alert.is_active && permissionStatus === 'granted' && (
+                <View style={styles.activeIndicator}>
+                  <Ionicons name="notifications" size={12} color={COLORS.accentGreen} />
+                  <Text style={styles.activeIndicatorText}>Aktiv</Text>
+                </View>
+              )}
 
               <TouchableOpacity
                 testID={`delete-alert-${alert.id}`}
@@ -272,6 +345,43 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOWS.medium,
   },
+  // Permission banner
+  permissionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    backgroundColor: '#2A1F00',
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.accentAmber + '50',
+  },
+  permissionBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+  },
+  permissionIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: RADIUS.md,
+    backgroundColor: COLORS.accentAmber + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  permissionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.accentAmber,
+  },
+  permissionSubtitle: {
+    fontSize: 12,
+    color: COLORS.accentAmber + 'AA',
+    marginTop: 1,
+  },
   scrollView: {
     flex: 1,
   },
@@ -372,6 +482,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: COLORS.textSecondary,
     marginLeft: 6,
+  },
+  activeIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.sm,
+    gap: 4,
+  },
+  activeIndicatorText: {
+    fontSize: 12,
+    color: COLORS.accentGreen,
+    fontWeight: '600',
   },
   deleteButton: {
     position: 'absolute',
