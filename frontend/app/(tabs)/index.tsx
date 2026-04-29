@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +19,7 @@ import { FuelSegmentedControl } from '../../src/components/FuelSegmentedControl'
 import { PremiumStationCard } from '../../src/components/PremiumStationCard';
 import { PLZSearchBar } from '../../src/components/PLZSearchBar';
 import { RecommendationCard } from '../../src/components/RecommendationCard';
+import { LocationPermissionModal } from '../../src/components/LocationPermissionModal';
 import { Station } from '../../src/types';
 
 export default function HomeScreen() {
@@ -50,35 +50,42 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [cheapestStation, setCheapestStation] = useState<Station | null>(null);
   const [avgPrice, setAvgPrice] = useState(0);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationDenied, setLocationDenied] = useState(false);
+  const locationResolveRef = useRef<((loc: { latitude: number; longitude: number } | null) => void) | null>(null);
 
   useEffect(() => {
     initializeApp();
   }, []);
 
-  const requestLocation = async () => {
+  const requestLocation = (): Promise<{ latitude: number; longitude: number } | null> => {
+    return new Promise((resolve) => {
+      locationResolveRef.current = resolve;
+      setShowLocationModal(true);
+    });
+  };
+
+  const handleLocationAllow = async () => {
+    setShowLocationModal(false);
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert(
-          'Standort benötigt',
-          'FuelRadar benötigt deinen Standort, um Tankstellen in deiner Nähe zu finden.',
-          [{ text: 'OK' }]
-        );
-        return null;
+        setLocationDenied(true);
+        locationResolveRef.current?.(null);
+        return;
       }
-
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-      });
-
-      return {
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-      };
-    } catch (error) {
-      console.error('Location error:', error);
-      return null;
+      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+      locationResolveRef.current?.({ latitude: loc.coords.latitude, longitude: loc.coords.longitude });
+    } catch {
+      setLocationDenied(true);
+      locationResolveRef.current?.(null);
     }
+  };
+
+  const handleLocationDeny = () => {
+    setShowLocationModal(false);
+    setLocationDenied(true);
+    locationResolveRef.current?.(null);
   };
 
   const fetchStations = useCallback(async (lat?: number, lng?: number, rad?: number) => {
@@ -195,6 +202,22 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <LocationPermissionModal
+        visible={showLocationModal}
+        onAllow={handleLocationAllow}
+        onDeny={handleLocationDeny}
+      />
+
+      {locationDenied && (
+        <View style={styles.deniedBanner}>
+          <Ionicons name="location-outline" size={14} color="#F59E0B" />
+          <Text style={styles.deniedText}>Kein Standort – Berlin als Standard</Text>
+          <TouchableOpacity onPress={() => { setLocationDenied(false); fetchStations(); }}>
+            <Ionicons name="refresh" size={14} color="#F59E0B" />
+          </TouchableOpacity>
+        </View>
+      )}
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.content}
@@ -370,5 +393,20 @@ const styles = StyleSheet.create({
     color: COLORS.textMuted,
     textAlign: 'center',
     lineHeight: 16,
+  },
+  deniedBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(245,158,11,0.1)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(245,158,11,0.2)',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+  },
+  deniedText: {
+    flex: 1,
+    fontSize: 12,
+    color: '#F59E0B',
   },
 });

@@ -21,6 +21,7 @@ import { useStore } from '../../src/store/useStore';
 import { fuelApi } from '../../src/services/api';
 import { Station, FuelType } from '../../src/types';
 import MapRenderer from '../../src/components/MapRenderer';
+import { LocationPermissionModal } from '../../src/components/LocationPermissionModal';
 
 const RADIUS_OPTIONS = [2, 5, 10, 25];
 const FUEL_OPTIONS: { type: FuelType; label: string }[] = [
@@ -45,8 +46,11 @@ export default function MapScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [locationDenied, setLocationDenied] = useState(false);
   const sheetAnim = useRef(new Animated.Value(0)).current;
   const mapRef = useRef<any>(null);
+  const locationResolveRef = useRef<((granted: boolean) => void) | null>(null);
 
   const cheapestPrice = useMemo(() => {
     const open = stations.filter(s => s.is_open && s[selectedFuelType] != null);
@@ -66,26 +70,50 @@ export default function MapScreen() {
     }
   }, []);
 
+  const loadLocationAndStations = useCallback(async (granted: boolean) => {
+    if (granted) {
+      try {
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const c = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+        setMapCenter(c);
+        setLocation({ latitude: c.lat, longitude: c.lng });
+        fetchStations(c.lat, c.lng, searchRadius);
+        return;
+      } catch {}
+    }
+    setLocationDenied(!granted);
+    if (location) {
+      const c = { lat: location.latitude, lng: location.longitude };
+      setMapCenter(c);
+      fetchStations(c.lat, c.lng, searchRadius);
+    } else {
+      setLocation({ latitude: DEFAULT_CENTER.lat, longitude: DEFAULT_CENTER.lng });
+      fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, searchRadius);
+    }
+  }, []);
+
+  const handleLocationAllow = async () => {
+    setShowLocationModal(false);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      await loadLocationAndStations(status === 'granted');
+    } catch {
+      await loadLocationAndStations(false);
+    }
+  };
+
+  const handleLocationDeny = async () => {
+    setShowLocationModal(false);
+    await loadLocationAndStations(false);
+  };
+
   useEffect(() => {
     (async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status === 'granted') {
-          const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-          const c = { lat: loc.coords.latitude, lng: loc.coords.longitude };
-          setMapCenter(c);
-          setLocation({ latitude: c.lat, longitude: c.lng });
-          fetchStations(c.lat, c.lng, searchRadius);
-          return;
-        }
-      } catch {}
-      if (location) {
-        const c = { lat: location.latitude, lng: location.longitude };
-        setMapCenter(c);
-        fetchStations(c.lat, c.lng, searchRadius);
+      const { status } = await Location.getForegroundPermissionsAsync();
+      if (status === 'granted') {
+        await loadLocationAndStations(true);
       } else {
-        setLocation({ latitude: DEFAULT_CENTER.lat, longitude: DEFAULT_CENTER.lng });
-        fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, searchRadius);
+        setShowLocationModal(true);
       }
     })();
   }, []);
@@ -167,6 +195,12 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
+      <LocationPermissionModal
+        visible={showLocationModal}
+        onAllow={handleLocationAllow}
+        onDeny={handleLocationDeny}
+      />
+
       {/* Map */}
       <MapRenderer
         center={mapCenter}
@@ -200,6 +234,13 @@ export default function MapScreen() {
             )}
           </View>
         </View>
+
+        {locationDenied && (
+          <TouchableOpacity style={styles.deniedBanner} onPress={() => setShowLocationModal(true)}>
+            <Ionicons name="location-outline" size={13} color="#F59E0B" />
+            <Text style={styles.deniedText}>Kein Standort – Berlin Standard · Tippen zum Aktivieren</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Fuel pills */}
         <View style={styles.pillRow}>
@@ -382,4 +423,12 @@ pillRow: { marginTop: SPACING.sm },
     borderRadius: RADIUS.xl, borderWidth: 1, borderColor: COLORS.border, zIndex: 15,
   },
   countText: { fontSize: 13, fontWeight: '600', color: COLORS.textPrimary, marginLeft: 6 },
+  deniedBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: 'rgba(245,158,11,0.12)', borderRadius: RADIUS.lg,
+    paddingHorizontal: SPACING.md, paddingVertical: 7,
+    borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)',
+    marginTop: SPACING.xs,
+  },
+  deniedText: { fontSize: 12, color: '#F59E0B', flex: 1 },
 });
