@@ -6,55 +6,86 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
 
 interface Props {
   visible: boolean;
+  /** true = permission permanently denied, show "Open Settings" instead of "Erlauben" */
+  permanentlyDenied?: boolean;
   onAllow: () => void;
   onDeny: () => void;
 }
 
-export function LocationPermissionModal({ visible, onAllow, onDeny }: Props) {
+export function LocationPermissionModal({ visible, permanentlyDenied = false, onAllow, onDeny }: Props) {
   const [showWhy, setShowWhy] = useState(false);
+
+  const handleAllow = () => {
+    if (permanentlyDenied) {
+      Linking.openSettings();
+    } else {
+      onAllow();
+    }
+  };
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
       <View style={styles.overlay}>
         <View style={styles.card}>
-          <View style={styles.iconWrap}>
-            <Ionicons name="location" size={32} color={COLORS.accent} />
+          <View style={[styles.iconWrap, permanentlyDenied && styles.iconWrapDenied]}>
+            <Ionicons
+              name={permanentlyDenied ? 'lock-closed' : 'location'}
+              size={32}
+              color={permanentlyDenied ? '#F59E0B' : COLORS.accent}
+            />
           </View>
 
-          <Text style={styles.title}>Standort freigeben?</Text>
-
-          <Text style={styles.body}>
-            FuelRadar zeigt dir Tankstellen in deiner Nähe und die günstigsten Preise auf der Karte.
+          <Text style={styles.title}>
+            {permanentlyDenied ? 'Standort gesperrt' : 'Standort freigeben?'}
           </Text>
 
-          {showWhy && (
-            <View style={styles.whyBox}>
-              <Text style={styles.whyText}>
-                <Text style={styles.whyBold}>Warum brauchen wir deinen Standort?{'\n'}</Text>
-                Dein Standort wird nur auf deinem Gerät verwendet, um Tankstellen in der Nähe zu laden. Er wird nicht gespeichert, nicht geteilt und nicht an Dritte weitergegeben.{'\n\n'}
-                Ohne Standort wird Berlin als Standardort verwendet.
-              </Text>
-            </View>
-          )}
+          <Text style={styles.body}>
+            {permanentlyDenied
+              ? 'Der Standort wurde dauerhaft verweigert. Bitte aktiviere ihn in den Einstellungen unter FuelRadar → Standort.'
+              : 'FuelRadar zeigt dir Tankstellen in deiner Nähe und die günstigsten Preise auf der Karte.'}
+          </Text>
 
-          <TouchableOpacity style={styles.whyBtn} onPress={() => setShowWhy(v => !v)}>
-            <Ionicons name={showWhy ? 'chevron-up' : 'information-circle-outline'} size={16} color={COLORS.accent} />
-            <Text style={styles.whyBtnText}>{showWhy ? 'Weniger anzeigen' : 'Warum wird der Standort benötigt?'}</Text>
-          </TouchableOpacity>
+          {!permanentlyDenied && (
+            <>
+              {showWhy && (
+                <View style={styles.whyBox}>
+                  <Text style={styles.whyText}>
+                    <Text style={styles.whyBold}>Warum brauchen wir deinen Standort?{'\n'}</Text>
+                    Dein Standort wird nur auf deinem Gerät verwendet, um Tankstellen in der Nähe zu laden. Er wird nicht gespeichert, nicht geteilt und nicht an Dritte weitergegeben.{'\n\n'}
+                    Ohne Standort wird Berlin als Standardort verwendet.
+                  </Text>
+                </View>
+              )}
+              <TouchableOpacity style={styles.whyBtn} onPress={() => setShowWhy(v => !v)}>
+                <Ionicons
+                  name={showWhy ? 'chevron-up' : 'information-circle-outline'}
+                  size={16}
+                  color={COLORS.accent}
+                />
+                <Text style={styles.whyBtnText}>
+                  {showWhy ? 'Weniger anzeigen' : 'Warum wird der Standort benötigt?'}
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
 
           <View style={styles.btnRow}>
             <TouchableOpacity style={styles.denyBtn} onPress={onDeny}>
               <Text style={styles.denyText}>Nicht jetzt</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.allowBtn} onPress={onAllow}>
-              <Text style={styles.allowText}>Erlauben</Text>
+            <TouchableOpacity
+              style={[styles.allowBtn, permanentlyDenied && styles.allowBtnSettings]}
+              onPress={handleAllow}
+            >
+              <Text style={styles.allowText}>
+                {permanentlyDenied ? 'Einstellungen' : 'Erlauben'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -88,6 +119,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.md,
+  },
+  iconWrapDenied: {
+    backgroundColor: 'rgba(245,158,11,0.12)',
   },
   title: {
     fontSize: 18,
@@ -151,6 +185,9 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg,
     backgroundColor: COLORS.accent,
     alignItems: 'center',
+  },
+  allowBtnSettings: {
+    backgroundColor: '#F59E0B',
   },
   allowText: {
     fontSize: 15,

@@ -48,9 +48,14 @@ export default function MapScreen() {
   const [mapCenter, setMapCenter] = useState(DEFAULT_CENTER);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationDenied, setLocationDenied] = useState(false);
+  const [locationPermanentlyDenied, setLocationPermanentlyDenied] = useState(false);
   const sheetAnim = useRef(new Animated.Value(0)).current;
   const mapRef = useRef<any>(null);
-  const locationResolveRef = useRef<((granted: boolean) => void) | null>(null);
+  // Use refs for searchRadius / location inside async callbacks to avoid stale closures
+  const searchRadiusRef = useRef(searchRadius);
+  const locationRef = useRef(location);
+  useEffect(() => { searchRadiusRef.current = searchRadius; }, [searchRadius]);
+  useEffect(() => { locationRef.current = location; }, [location]);
 
   const cheapestPrice = useMemo(() => {
     const open = stations.filter(s => s.is_open && s[selectedFuelType] != null);
@@ -71,33 +76,42 @@ export default function MapScreen() {
   }, []);
 
   const loadLocationAndStations = useCallback(async (granted: boolean) => {
+    const rad = searchRadiusRef.current;
+    const loc = locationRef.current;
     if (granted) {
       try {
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        const c = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+        const pos = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: 5000,
+          distanceInterval: 0,
+        });
+        const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setMapCenter(c);
         setLocation({ latitude: c.lat, longitude: c.lng });
-        fetchStations(c.lat, c.lng, searchRadius);
+        fetchStations(c.lat, c.lng, rad);
+        setLocationDenied(false);
         return;
       } catch {}
     }
-    setLocationDenied(!granted);
-    if (location) {
-      const c = { lat: location.latitude, lng: location.longitude };
+    setLocationDenied(true);
+    if (loc) {
+      const c = { lat: loc.latitude, lng: loc.longitude };
       setMapCenter(c);
-      fetchStations(c.lat, c.lng, searchRadius);
+      fetchStations(c.lat, c.lng, rad);
     } else {
       setLocation({ latitude: DEFAULT_CENTER.lat, longitude: DEFAULT_CENTER.lng });
-      fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, searchRadius);
+      fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, rad);
     }
-  }, []);
+  }, [fetchStations]);
 
   const handleLocationAllow = async () => {
     setShowLocationModal(false);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      await loadLocationAndStations(status === 'granted');
-    } catch {
+    const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
+    if (status === 'granted') {
+      setLocationPermanentlyDenied(false);
+      await loadLocationAndStations(true);
+    } else {
+      setLocationPermanentlyDenied(!canAskAgain);
       await loadLocationAndStations(false);
     }
   };
@@ -109,10 +123,11 @@ export default function MapScreen() {
 
   useEffect(() => {
     (async () => {
-      const { status } = await Location.getForegroundPermissionsAsync();
+      const { status, canAskAgain } = await Location.getForegroundPermissionsAsync();
       if (status === 'granted') {
         await loadLocationAndStations(true);
       } else {
+        setLocationPermanentlyDenied(!canAskAgain && status === 'denied');
         setShowLocationModal(true);
       }
     })();
@@ -197,6 +212,7 @@ export default function MapScreen() {
     <View style={styles.container}>
       <LocationPermissionModal
         visible={showLocationModal}
+        permanentlyDenied={locationPermanentlyDenied}
         onAllow={handleLocationAllow}
         onDeny={handleLocationDeny}
       />
@@ -236,9 +252,22 @@ export default function MapScreen() {
         </View>
 
         {locationDenied && (
-          <TouchableOpacity style={styles.deniedBanner} onPress={() => setShowLocationModal(true)}>
+          <TouchableOpacity
+            style={styles.deniedBanner}
+            onPress={() => {
+              if (locationPermanentlyDenied) {
+                Linking.openSettings();
+              } else {
+                setShowLocationModal(true);
+              }
+            }}
+          >
             <Ionicons name="location-outline" size={13} color="#F59E0B" />
-            <Text style={styles.deniedText}>Kein Standort – Berlin Standard · Tippen zum Aktivieren</Text>
+            <Text style={styles.deniedText}>
+              {locationPermanentlyDenied
+                ? 'Standort gesperrt · Einstellungen öffnen'
+                : 'Kein Standort – Berlin Standard · Tippen zum Aktivieren'}
+            </Text>
           </TouchableOpacity>
         )}
 
