@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -256,13 +257,13 @@ export default function HomeScreen() {
       />
 
       {locationDenied && (
-        <View style={styles.deniedBanner}>
+        <TouchableOpacity style={styles.deniedBanner} onPress={() => Linking.openSettings()}>
           <Ionicons name="location-outline" size={14} color="#F59E0B" />
           <Text style={styles.deniedText}>Kein Standort – Berlin als Standard</Text>
           <TouchableOpacity onPress={() => { setLocationDenied(false); fetchStations(); }}>
             <Ionicons name="refresh" size={14} color="#F59E0B" />
           </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
       )}
 
       <ScrollView
