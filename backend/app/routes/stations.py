@@ -1,7 +1,14 @@
-from fastapi import APIRouter, Query, HTTPException
-from typing import List, Optional
-from app.services.tankerkoenig import tankerkoenig_service
+from datetime import datetime, timedelta
+from typing import Any, Dict, List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
+
+from app.core.database import get_async_session
+from app.models.price_history import PriceHistory, PriceHistoryEntry
+from app.services.tankerkoenig import tankerkoenig_service
 
 router = APIRouter(prefix="/stations", tags=["stations"])
 
@@ -90,6 +97,28 @@ async def get_nearby_stations(
     )
     
     return result
+
+
+@router.get("/{station_id}/history", response_model=List[PriceHistoryEntry])
+async def get_price_history(
+    station_id: str,
+    fuel_type: str = Query("diesel", description="Kraftstoffart: diesel, e5, e10"),
+    days: int = Query(7, ge=1, le=90, description="Zeitraum in Tagen"),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """Preisverlauf einer Tankstelle abrufen"""
+    if fuel_type not in ("diesel", "e5", "e10"):
+        raise HTTPException(status_code=400, detail="fuel_type muss diesel, e5 oder e10 sein")
+
+    since = datetime.utcnow() - timedelta(days=days)
+    result = await db.execute(
+        select(PriceHistory)
+        .where(PriceHistory.station_id == station_id)
+        .where(PriceHistory.fuel_type == fuel_type)
+        .where(PriceHistory.recorded_at >= since)
+        .order_by(PriceHistory.recorded_at.asc())
+    )
+    return result.scalars().all()
 
 
 @router.get("/{station_id}", response_model=DetailResponse)

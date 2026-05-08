@@ -253,6 +253,37 @@ async def legacy_nearby_stations(
     return result
 
 
+@api_router.get("/stations/{station_id}/history")
+async def legacy_station_price_history(
+    station_id: str,
+    fuel_type: str = Query("diesel"),
+    days: int = Query(7, ge=1, le=90),
+):
+    """Preisverlauf einer Tankstelle"""
+    from datetime import datetime, timedelta
+    from sqlmodel import select
+    from app.core.database import async_session_factory
+    from app.models.price_history import PriceHistory
+
+    if fuel_type not in ("diesel", "e5", "e10"):
+        raise HTTPException(status_code=400, detail="fuel_type muss diesel, e5 oder e10 sein")
+    if async_session_factory is None:
+        raise HTTPException(status_code=503, detail="Datenbank nicht verfügbar")
+
+    since = datetime.utcnow() - timedelta(days=days)
+    async with async_session_factory() as session:
+        result = await session.execute(
+            select(PriceHistory)
+            .where(PriceHistory.station_id == station_id)
+            .where(PriceHistory.fuel_type == fuel_type)
+            .where(PriceHistory.recorded_at >= since)
+            .order_by(PriceHistory.recorded_at.asc())
+        )
+        entries = result.scalars().all()
+
+    return [{"price": e.price, "recorded_at": e.recorded_at} for e in entries]
+
+
 @api_router.get("/stations/{station_id}")
 async def legacy_station_detail(station_id: str):
     """Legacy endpoint - redirects to new stations router"""

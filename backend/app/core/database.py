@@ -76,7 +76,7 @@ async def init_db():
         logger.warning("Skipping database initialization - no engine available")
         return
     
-    from app.models import device, favorite, alert
+    from app.models import device, favorite, alert, price_history
     
     async with async_engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)

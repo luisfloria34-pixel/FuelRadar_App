@@ -196,7 +196,8 @@ export default function HomeScreen() {
         }
       }
     } catch (error) {
-      console.error('Error fetching stations:', error);
+      // warn instead of error — avoids the red Expo dev overlay for network issues
+      console.warn('[fetchStations]', error instanceof Error ? error.message : error);
     } finally {
       setIsLoading(false);
     }

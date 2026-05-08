@@ -17,7 +17,7 @@ const { width } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { setHasSeenOnboarding, t } = useStore();
+  const { setHasSeenOnboarding, t, language } = useStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;

@@ -1,11 +1,53 @@
-import httpx
-from typing import List, Optional, Dict, Any
-from app.core.config import settings
-from app.core.cache import cache
-import logging
+import asyncio
 import hashlib
+import logging
+from typing import Any, Dict, List, Optional
+
+import httpx
+from sqlmodel import select
+
+from app.core.cache import cache
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+async def _store_station_prices(stations: List[Dict[str, Any]]) -> None:
+    """Persist prices for each station/fuel combo if they changed since last record."""
+    try:
+        from app.core.database import async_session_factory
+        from app.models.price_history import PriceHistory
+
+        if async_session_factory is None:
+            return
+
+        async with async_session_factory() as session:
+            for station in stations:
+                station_id = station["id"]
+                for fuel_type in ("diesel", "e5", "e10"):
+                    price = station.get(fuel_type)
+                    if price is None:
+                        continue
+
+                    result = await session.execute(
+                        select(PriceHistory)
+                        .where(PriceHistory.station_id == station_id)
+                        .where(PriceHistory.fuel_type == fuel_type)
+                        .order_by(PriceHistory.recorded_at.desc())
+                        .limit(1)
+                    )
+                    last = result.scalars().first()
+
+                    if last is None or abs(last.price - price) > 0.0001:
+                        session.add(PriceHistory(
+                            station_id=station_id,
+                            fuel_type=fuel_type,
+                            price=price,
+                        ))
+
+            await session.commit()
+    except Exception as exc:
+        logger.warning(f"Price history storage failed: {exc}")
 
 class TankerkoenigService:
     """Service for Tankerkönig API interactions"""
@@ -109,7 +151,10 @@ class TankerkoenigService:
                 
                 # Cache result
                 await cache.set(cache_key, result, settings.cache_ttl_seconds)
-                
+
+                # Store prices in DB (fire-and-forget, does not delay response)
+                asyncio.create_task(_store_station_prices(stations))
+
                 return result
                 
         except httpx.TimeoutException:

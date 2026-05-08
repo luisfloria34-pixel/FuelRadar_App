@@ -4,3 +4,4 @@ from app.models.alert import (
     Alert, AlertState, AlertCreate, AlertUpdate, AlertResponse,
     AlertType, FuelType
 )
+from app.models.price_history import PriceHistory, PriceHistoryEntry

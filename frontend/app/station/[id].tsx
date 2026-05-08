@@ -9,13 +9,14 @@ import {
   Linking,
   Platform,
   Alert,
+  Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
-import { fuelApi } from '../../src/services/api';
+import { fuelApi, PriceHistoryEntry } from '../../src/services/api';
 import { StationDetail, FuelType } from '../../src/types';
 
 const fuelLabels: Record<FuelType, string> = {
@@ -30,6 +31,180 @@ const fuelColors: Record<FuelType, string> = {
   e10: COLORS.e10,
 };
 
+const CHART_HEIGHT = 100;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CHART_WIDTH = SCREEN_WIDTH - SPACING.lg * 2 - SPACING.md * 2;
+
+function PriceLineChart({ data, color }: { data: PriceHistoryEntry[]; color: string }) {
+  if (data.length === 0) {
+    return (
+      <View style={chartStyles.empty}>
+        <Text style={chartStyles.emptyText}>Noch keine Verlaufsdaten</Text>
+      </View>
+    );
+  }
+
+  if (data.length === 1) {
+    return (
+      <View style={chartStyles.empty}>
+        <Text style={chartStyles.emptyText}>{data[0].price.toFixed(3).replace('.', ',')} €</Text>
+      </View>
+    );
+  }
+
+  const prices = data.map((d) => d.price);
+  const minP = Math.min(...prices);
+  const maxP = Math.max(...prices);
+  const range = maxP - minP || 0.001;
+
+  const pts = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * CHART_WIDTH;
+    const y = CHART_HEIGHT - ((d.price - minP) / range) * CHART_HEIGHT * 0.8 - CHART_HEIGHT * 0.1;
+    return { x, y, price: d.price, date: d.recorded_at };
+  });
+
+  const segments = pts.slice(0, -1).map((p1, i) => {
+    const p2 = pts[i + 1];
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+    return { midX: (p1.x + p2.x) / 2, midY: (p1.y + p2.y) / 2, length, angle };
+  });
+
+  const labelStep = Math.max(1, Math.floor(data.length / 4));
+  const labelIndices = new Set([0, data.length - 1]);
+  for (let i = labelStep; i < data.length - 1; i += labelStep) labelIndices.add(i);
+
+  return (
+    <View style={chartStyles.wrapper}>
+      <View style={[chartStyles.canvas, { height: CHART_HEIGHT, width: CHART_WIDTH }]}>
+        {/* Grid lines */}
+        {[0.25, 0.5, 0.75].map((frac) => (
+          <View
+            key={frac}
+            style={[chartStyles.gridLine, { top: CHART_HEIGHT * frac }]}
+          />
+        ))}
+
+        {/* Line segments */}
+        {segments.map((seg, i) => (
+          <View
+            key={i}
+            style={{
+              position: 'absolute',
+              left: seg.midX - seg.length / 2,
+              top: seg.midY - 1,
+              width: seg.length,
+              height: 2,
+              backgroundColor: color,
+              borderRadius: 1,
+              transform: [{ rotate: `${seg.angle}deg` }],
+            }}
+          />
+        ))}
+
+        {/* Data points */}
+        {pts.map((p, i) => (
+          <View
+            key={i}
+            style={[chartStyles.dot, { left: p.x - 4, top: p.y - 4, backgroundColor: color }]}
+          />
+        ))}
+      </View>
+
+      {/* X-axis labels */}
+      <View style={[chartStyles.xAxis, { width: CHART_WIDTH }]}>
+        {pts.map((p, i) =>
+          labelIndices.has(i) ? (
+            <Text
+              key={i}
+              style={[chartStyles.xLabel, { left: p.x - 18 }]}
+              numberOfLines={1}
+            >
+              {new Date(p.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
+            </Text>
+          ) : null
+        )}
+      </View>
+
+      {/* Min / max labels */}
+      <View style={chartStyles.yLabels}>
+        <Text style={chartStyles.yLabel}>{maxP.toFixed(3).replace('.', ',')} €</Text>
+        <Text style={chartStyles.yLabel}>{minP.toFixed(3).replace('.', ',')} €</Text>
+      </View>
+    </View>
+  );
+}
+
+const chartStyles = StyleSheet.create({
+  wrapper: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  canvas: {
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  gridLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+  dot: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: COLORS.cardBackground,
+  },
+  xAxis: {
+    height: 20,
+    position: 'relative',
+    marginTop: SPACING.xs,
+  },
+  xLabel: {
+    position: 'absolute',
+    fontSize: 10,
+    color: COLORS.textMuted,
+    width: 36,
+    textAlign: 'center',
+  },
+  yLabels: {
+    position: 'absolute',
+    right: SPACING.md,
+    top: SPACING.md,
+    bottom: SPACING.md + 20,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+  },
+  yLabel: {
+    fontSize: 10,
+    color: COLORS.textMuted,
+  },
+  empty: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.xl,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 80,
+  },
+  emptyText: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+  },
+});
+
 export default function StationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
@@ -38,6 +213,8 @@ export default function StationDetailScreen() {
   const [station, setStation] = useState<StationDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [priceHistory, setPriceHistory] = useState<PriceHistoryEntry[]>([]);
+  const [chartFuelType, setChartFuelType] = useState<FuelType>('diesel');
   const favorite = station ? isFavorite(station.id) : false;
 
   useEffect(() => {
@@ -60,6 +237,13 @@ export default function StationDetailScreen() {
     };
     fetchStation();
   }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    fuelApi.getPriceHistory(id, chartFuelType, 7)
+      .then(setPriceHistory)
+      .catch(() => setPriceHistory([]));
+  }, [id, chartFuelType]);
 
   const handleToggleFavorite = async () => {
     if (!station) return;
@@ -237,6 +421,25 @@ export default function StationDetailScreen() {
               );
             })}
           </View>
+        </View>
+
+        {/* Price History Chart */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Preisverlauf (7 Tage)</Text>
+          <View style={styles.chartFuelTabs}>
+            {(['diesel', 'e5', 'e10'] as FuelType[]).map((ft) => (
+              <TouchableOpacity
+                key={ft}
+                style={[styles.chartTab, chartFuelType === ft && { borderBottomColor: fuelColors[ft], borderBottomWidth: 2 }]}
+                onPress={() => setChartFuelType(ft)}
+              >
+                <Text style={[styles.chartTabText, chartFuelType === ft && { color: fuelColors[ft] }]}>
+                  {fuelLabels[ft]}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <PriceLineChart data={priceHistory} color={fuelColors[chartFuelType]} />
         </View>
 
         {/* Opening Hours */}
@@ -605,5 +808,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.background,
     marginLeft: SPACING.sm,
+  },
+  chartFuelTabs: {
+    flexDirection: 'row',
+    marginBottom: SPACING.md,
+  },
+  chartTab: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  chartTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
   },
 });

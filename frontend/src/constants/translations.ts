@@ -4,12 +4,12 @@ export const translations = {
     // General
     appName: 'FuelRadar',
     tagline: 'Live Kraftstoffpreise in Deutschland',
-    
+
     // Greetings
     goodMorning: 'Guten Morgen',
     goodAfternoon: 'Guten Tag',
     goodEvening: 'Guten Abend',
-    
+
     // Home Screen
     findBestPrices: 'Beste Preise finden',
     searchPlaceholder: 'Tankstelle suchen...',
@@ -26,17 +26,25 @@ export const translations = {
     awayKm: 'km entfernt',
     nearbyStations: 'Tankstellen in der Nähe',
     seeAll: 'Alle anzeigen',
-    
+    cheapestNearYou: 'Günstigste in deiner Nähe',
+    searchingStations: 'Suche Tankstellen...',
+    liveRecommendation: 'LIVE-EMPFEHLUNG',
+    show: 'Anzeigen',
+    cheaperThanAvg: 'günstiger',
+
     // Fuel Types
     diesel: 'Diesel',
     superE5: 'Super E5',
     superE10: 'Super E10',
-    
+
     // Station Card
     open: 'Geöffnet',
     closed: 'Geschlossen',
     openNow: 'Jetzt geöffnet',
-    
+    details: 'Details',
+    away: 'entfernt',
+    live: 'Live',
+
     // Map Screen
     nearbyStationsTitle: 'Tankstellen in der Nähe',
     stationsFound: 'Tankstellen gefunden',
@@ -47,7 +55,9 @@ export const translations = {
     findingStations: 'Tankstellen werden gesucht...',
     noStationsFound: 'Keine Tankstellen gefunden',
     tryAdjustingFilters: 'Versuchen Sie, die Filter anzupassen oder suchen Sie in einem anderen Bereich',
-    
+    navigation: 'Navigation',
+    searchPLZ: 'PLZ oder Ort eingeben',
+
     // Alerts Screen
     priceAlerts: 'Preisalarme',
     noAlertsYet: 'Noch keine Alarme',
@@ -55,23 +65,34 @@ export const translations = {
     createAlert: 'Alarm erstellen',
     alertWhenBelow: 'Alarm wenn unter',
     targetPrice: 'Zielpreis',
+    targetPriceEur: 'Zielpreis (€)',
     stationName: 'Tankstellenname',
     anyStation: 'Beliebige Tankstelle',
+    anyStationPlaceholder: 'Jede Tankstelle',
     optional: 'Optional',
     deleteAlert: 'Alarm löschen',
     deleteAlertConfirm: 'Möchten Sie diesen Alarm wirklich löschen?',
-    
+    newPriceAlert: 'Neuer Preisalarm',
+    activeAlertsCount: 'aktive Alarme',
+    getNotified: 'Werde benachrichtigt',
+    invalidPrice: 'Ungültiger Preis',
+    invalidPriceBody: 'Bitte gib einen gültigen Preis ein.',
+
     // Favorites Screen
     favorites: 'Favoriten',
     stations: 'Tankstellen',
     noFavoritesYet: 'Noch keine Favoriten',
     saveFavoritesDescription: 'Speichern Sie Ihre bevorzugten Tankstellen für schnellen Zugriff auf aktuelle Preise.',
     exploreStations: 'Tankstellen erkunden',
+    discoverStations: 'Tankstellen entdecken',
     loadingPrices: 'Preise werden geladen...',
+    loadingPricesShort: 'Preise laden...',
     viewDetails: 'Details anzeigen',
     removeFavorite: 'Favorit entfernen',
     removeFavoriteConfirm: 'aus den Favoriten entfernen?',
-    
+    savedStations: 'gespeicherte Tankstellen',
+    yourFavoriteStations: 'Deine Lieblingstankstellen',
+
     // Station Detail
     currentPrices: 'Aktuelle Preise',
     tapToSetAlert: 'Tippen für Alarm',
@@ -80,6 +101,7 @@ export const translations = {
     location: 'Standort',
     state: 'Bundesland',
     navigate: 'Navigation',
+    startNavigation: 'Navigation starten',
     createPriceAlert: 'Preisalarm erstellen',
     getNotifiedWhen: 'Benachrichtigt werden, wenn',
     dropsBelow: 'unter fällt',
@@ -88,13 +110,18 @@ export const translations = {
     alertCreated: 'Preisalarm erstellt!',
     stationNotFound: 'Tankstelle nicht gefunden',
     failedToLoad: 'Laden fehlgeschlagen',
-    
+    loadingDetails: 'Lade Details...',
+    priceHistory: 'Preisverlauf (7 Tage)',
+    noHistoryData: 'Noch keine Verlaufsdaten',
+
     // Settings
     settings: 'Einstellungen',
     fuelPreferences: 'Kraftstoff-Einstellungen',
     defaultFuelType: 'Standard-Kraftstoffart',
+    preferredFuel: 'Bevorzugter Kraftstoff',
     searchSettings: 'Sucheinstellungen',
     searchRadius: 'Suchradius',
+    searchRadiusDesc: 'Umkreis für die Tankstellensuche',
     general: 'Allgemein',
     country: 'Land',
     germany: 'Deutschland',
@@ -110,7 +137,16 @@ export const translations = {
     resetOnboarding: 'Onboarding zurücksetzen',
     showWelcomeAgain: 'Willkommensbildschirme erneut anzeigen',
     onboardingReset: 'Onboarding wurde zurückgesetzt. Starten Sie die App neu, um es wieder zu sehen.',
-    
+    legal: 'Rechtliches',
+    aboutApp: 'Über die App',
+    langSection: 'Sprache',
+
+    // Language Change Dialog (required)
+    language_change_title: 'Sprache ändern',
+    language_change_body: 'App wird neu gestartet.',
+    language_change_cancel: 'Abbrechen',
+    language_change_confirm: 'Bestätigen',
+
     // Onboarding
     skip: 'Überspringen',
     next: 'Weiter',
@@ -121,7 +157,7 @@ export const translations = {
     onboarding2Desc: 'Sehen Sie alle Tankstellen in der Nähe mit aktuellen Preisen auf einen Blick.',
     onboarding3Title: 'Preisalarme',
     onboarding3Desc: 'Werden Sie benachrichtigt, wenn die Kraftstoffpreise unter Ihren Zielpreis fallen.',
-    
+
     // Common
     cancel: 'Abbrechen',
     delete: 'Löschen',
@@ -131,24 +167,31 @@ export const translations = {
     error: 'Fehler',
     loading: 'Laden...',
     retry: 'Erneut versuchen',
-    
+    confirm: 'Bestätigen',
+
+    // Location
+    locationRequired: 'Standort benötigt',
+    locationRequiredBody: 'FuelRadar benötigt deinen Standort, um Tankstellen in deiner Nähe zu finden.',
+
     // Legal
     legalDisclaimer: 'Kraftstoffpreisdaten: Tankerkönig / MTS-K (CC BY 4.0). Preise können sich an der Tankstelle ändern. Keine Gewähr für Richtigkeit.',
-    
+
     // Tab Labels
     home: 'Start',
     map: 'Karte',
+    alertsTab: 'Alarme',
+    favoritesTab: 'Favoriten',
   },
   en: {
     // General
     appName: 'FuelRadar',
     tagline: 'Live fuel prices in Germany',
-    
+
     // Greetings
     goodMorning: 'Good morning',
     goodAfternoon: 'Good afternoon',
     goodEvening: 'Good evening',
-    
+
     // Home Screen
     findBestPrices: 'Find Best Prices',
     searchPlaceholder: 'Search for a station...',
@@ -165,17 +208,25 @@ export const translations = {
     awayKm: 'km away',
     nearbyStations: 'Nearby Stations',
     seeAll: 'See all',
-    
+    cheapestNearYou: 'Cheapest near you',
+    searchingStations: 'Searching stations...',
+    liveRecommendation: 'LIVE RECOMMENDATION',
+    show: 'Show',
+    cheaperThanAvg: 'cheaper',
+
     // Fuel Types
     diesel: 'Diesel',
     superE5: 'Super E5',
     superE10: 'Super E10',
-    
+
     // Station Card
     open: 'Open',
     closed: 'Closed',
     openNow: 'Open Now',
-    
+    details: 'Details',
+    away: 'away',
+    live: 'Live',
+
     // Map Screen
     nearbyStationsTitle: 'Nearby Stations',
     stationsFound: 'stations found',
@@ -186,7 +237,9 @@ export const translations = {
     findingStations: 'Finding stations...',
     noStationsFound: 'No stations found',
     tryAdjustingFilters: 'Try adjusting your filters or search in a different area',
-    
+    navigation: 'Navigate',
+    searchPLZ: 'Enter postcode or city',
+
     // Alerts Screen
     priceAlerts: 'Price Alerts',
     noAlertsYet: 'No Alerts Yet',
@@ -194,23 +247,34 @@ export const translations = {
     createAlert: 'Create Alert',
     alertWhenBelow: 'Alert when below',
     targetPrice: 'Target Price',
+    targetPriceEur: 'Target Price (€)',
     stationName: 'Station Name',
     anyStation: 'Any station',
+    anyStationPlaceholder: 'Any station',
     optional: 'Optional',
     deleteAlert: 'Delete Alert',
     deleteAlertConfirm: 'Are you sure you want to delete this alert?',
-    
+    newPriceAlert: 'New Price Alert',
+    activeAlertsCount: 'active alerts',
+    getNotified: 'Get notified',
+    invalidPrice: 'Invalid Price',
+    invalidPriceBody: 'Please enter a valid price.',
+
     // Favorites Screen
     favorites: 'Favorites',
     stations: 'stations',
     noFavoritesYet: 'No Favorites Yet',
     saveFavoritesDescription: 'Save your preferred stations for quick access to their current prices.',
     exploreStations: 'Explore Stations',
+    discoverStations: 'Discover Stations',
     loadingPrices: 'Loading prices...',
+    loadingPricesShort: 'Loading prices...',
     viewDetails: 'View Details',
     removeFavorite: 'Remove Favorite',
     removeFavoriteConfirm: 'Remove from favorites?',
-    
+    savedStations: 'saved stations',
+    yourFavoriteStations: 'Your favorite stations',
+
     // Station Detail
     currentPrices: 'Current Prices',
     tapToSetAlert: 'Tap to set alert',
@@ -219,6 +283,7 @@ export const translations = {
     location: 'Location',
     state: 'State',
     navigate: 'Navigate',
+    startNavigation: 'Start Navigation',
     createPriceAlert: 'Create Price Alert',
     getNotifiedWhen: 'Get notified when',
     dropsBelow: 'drops below',
@@ -227,13 +292,18 @@ export const translations = {
     alertCreated: 'Price alert created!',
     stationNotFound: 'Station not found',
     failedToLoad: 'Failed to load station details',
-    
+    loadingDetails: 'Loading details...',
+    priceHistory: 'Price History (7 days)',
+    noHistoryData: 'No history data yet',
+
     // Settings
     settings: 'Settings',
     fuelPreferences: 'Fuel Preferences',
     defaultFuelType: 'Default Fuel Type',
+    preferredFuel: 'Preferred Fuel',
     searchSettings: 'Search Settings',
     searchRadius: 'Search Radius',
+    searchRadiusDesc: 'Search radius for stations',
     general: 'General',
     country: 'Country',
     germany: 'Germany',
@@ -249,7 +319,16 @@ export const translations = {
     resetOnboarding: 'Reset Onboarding',
     showWelcomeAgain: 'Show welcome screens again',
     onboardingReset: 'Onboarding has been reset. Restart the app to see it again.',
-    
+    legal: 'Legal',
+    aboutApp: 'About the App',
+    langSection: 'Language',
+
+    // Language Change Dialog (required)
+    language_change_title: 'Change Language',
+    language_change_body: 'App will restart.',
+    language_change_cancel: 'Cancel',
+    language_change_confirm: 'Confirm',
+
     // Onboarding
     skip: 'Skip',
     next: 'Next',
@@ -260,7 +339,7 @@ export const translations = {
     onboarding2Desc: 'View all nearby stations on a map with live prices at a glance.',
     onboarding3Title: 'Price Drop Alerts',
     onboarding3Desc: 'Get notified when fuel prices drop below your target price.',
-    
+
     // Common
     cancel: 'Cancel',
     delete: 'Delete',
@@ -270,13 +349,20 @@ export const translations = {
     error: 'Error',
     loading: 'Loading...',
     retry: 'Retry',
-    
+    confirm: 'Confirm',
+
+    // Location
+    locationRequired: 'Location Required',
+    locationRequiredBody: 'FuelRadar needs your location to find nearby stations.',
+
     // Legal
     legalDisclaimer: 'Fuel price data: Tankerkönig / MTS-K (CC BY 4.0). Prices may change at the station. No guarantee of accuracy.',
-    
+
     // Tab Labels
     home: 'Home',
     map: 'Map',
+    alertsTab: 'Alerts',
+    favoritesTab: 'Favorites',
   },
 };
 

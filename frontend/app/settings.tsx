@@ -42,6 +42,7 @@ export default function SettingsScreen() {
   };
 
   const handleLanguageChange = async (lang: Language) => {
+    if (lang === language) return;
     await setLanguage(lang);
   };
 

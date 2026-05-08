@@ -6,7 +6,7 @@ import { COLORS, RADIUS, SHADOWS } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 
 export default function TabLayout() {
-  const { t } = useStore();
+  const { t, language } = useStore();
 
   return (
     <Tabs
@@ -22,7 +22,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Start',
+          title: t('home'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
               <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
@@ -33,7 +33,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="map"
         options={{
-          title: 'Karte',
+          title: t('map'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
               <Ionicons name={focused ? 'map' : 'map-outline'} size={24} color={color} />
@@ -44,7 +44,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="alerts"
         options={{
-          title: 'Alarme',
+          title: t('alertsTab'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
               <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={24} color={color} />
@@ -55,7 +55,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="favorites"
         options={{
-          title: 'Favoriten',
+          title: t('favoritesTab'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
               <Ionicons name={focused ? 'heart' : 'heart-outline'} size={24} color={color} />
