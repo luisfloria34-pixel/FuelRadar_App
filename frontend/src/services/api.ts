@@ -2,6 +2,8 @@
 import { Station, StationDetail } from '../types';
 import { supabase, SUPABASE_FUNCTIONS_URL } from './supabase';
 
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
+
 // ─── URL config ──────────────────────────────────────────────────────────────
 
 // FastAPI backend (favorites, alerts, device registration).
@@ -26,7 +28,11 @@ async function edgeGet<T>(fn: string, params?: Params): Promise<T> {
   try {
     const res = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      },
       signal: ctrl.signal,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
