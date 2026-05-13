@@ -10,12 +10,15 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.fuelradar.app",
+      "bundleIdentifier": "com.luishustler.fuelradar",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Find fuel stations near your location",
         "NSLocationAlwaysUsageDescription": "Get alerts when nearby prices drop",
         "NSUserNotificationsUsageDescription": "FuelRadar sends you a notification when fuel prices drop below your set threshold.",
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "aps-environment": "production"
       }
     },
     "android": {
@@ -24,7 +27,8 @@
         "backgroundColor": "#0A0A0B"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.fuelradar.app",
+      "package": "com.luishustler.fuelradar",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
@@ -60,7 +64,8 @@
         "expo-notifications",
         {
           "icon": "./assets/images/notification-icon.png",
-          "color": "#32D74B"
+          "color": "#32D74B",
+          "defaultChannel": "default"
         }
       ]
     ],
