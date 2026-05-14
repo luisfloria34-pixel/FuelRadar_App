@@ -138,13 +138,12 @@ export const fuelApi = {
     deviceId: string,
     data: { station_id: string; station_name: string; station_brand: string; lat: number; lng: number },
   ) =>
-    backendFetch<any>('POST', '/api/v2/favorites/', {
-      deviceId,
-      body: { ...data, device_uuid: deviceId },
+    backendFetch<any>('POST', `/api/v2/favorites/${deviceId}`, {
+      body: { ...data },
     }),
 
   removeFavorite: (deviceId: string, stationId: string) =>
-    backendFetch<void>('DELETE', `/api/v2/favorites/${stationId}`, { deviceId }),
+    backendFetch<void>('DELETE', `/api/v2/favorites/${deviceId}/${stationId}`),
 
   // ── FastAPI backend (alerts) ─────────────────────────────────────────────
 
@@ -164,16 +163,15 @@ export const fuelApi = {
       radius_km?: number;
     },
   ) =>
-    backendFetch<any>('POST', '/api/v2/alerts/', {
-      deviceId,
-      body: { ...data, device_uuid: deviceId, alert_type: data.alert_type ?? 'fuel_threshold' },
+    backendFetch<any>('POST', `/api/v2/alerts/${deviceId}`, {
+      body: { ...data, alert_type: data.alert_type ?? 'fuel_threshold' },
     }),
 
   deleteAlert: (deviceId: string, alertId: number) =>
-    backendFetch<void>('DELETE', `/api/v2/alerts/${alertId}`, { deviceId }),
+    backendFetch<void>('DELETE', `/api/v2/alerts/${deviceId}/${alertId}`),
 
   updateAlert: (deviceId: string, alertId: number, data: Record<string, unknown>) =>
-    backendFetch<any>('PATCH', `/api/v2/alerts/${alertId}`, { deviceId, body: data }),
+    backendFetch<any>('PATCH', `/api/v2/alerts/${deviceId}/${alertId}`, { body: data }),
 
   // ── FastAPI backend (devices) ────────────────────────────────────────────
 
@@ -183,7 +181,7 @@ export const fuelApi = {
     platform?: string,
     locale?: string,
   ) =>
-    backendFetch<any>('POST', '/api/v2/devices/', {
+    backendFetch<any>('POST', '/api/v2/devices', {
       body: {
         device_uuid: deviceId,
         expo_push_token: pushToken ?? null,
@@ -196,7 +194,7 @@ export const fuelApi = {
     edgePost<any>('push-tokens', { token, device_id: deviceId }),
 
   logSearch: (data: Record<string, unknown>) =>
-    edgePost<any>('analytics/search', data),
+    edgePost<any>('analytics-search', data),
 };
 
 export default fuelApi;
