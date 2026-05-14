@@ -1,8 +1,8 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { View, StyleSheet, Platform } from 'react-native';
-import { COLORS, RADIUS, SHADOWS } from '../../src/constants/theme';
+import { StyleSheet, Platform } from 'react-native';
+import { COLORS, SHADOWS } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 
 export default function TabLayout() {
@@ -23,10 +23,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: t('home'),
-          tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name="home-outline" size={24} color={color} />
-            </View>
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home-outline" size={24} color={color} />
           ),
         }}
       />
@@ -34,10 +32,8 @@ export default function TabLayout() {
         name="map"
         options={{
           title: t('map'),
-          tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name="map-outline" size={24} color={color} />
-            </View>
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="map-outline" size={24} color={color} />
           ),
         }}
       />
@@ -45,10 +41,8 @@ export default function TabLayout() {
         name="alerts"
         options={{
           title: t('alertsTab'),
-          tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name="notifications-outline" size={24} color={color} />
-            </View>
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="notifications-outline" size={24} color={color} />
           ),
         }}
       />
@@ -56,10 +50,8 @@ export default function TabLayout() {
         name="favorites"
         options={{
           title: t('favoritesTab'),
-          tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name="heart-outline" size={24} color={color} />
-            </View>
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="heart-outline" size={24} color={color} />
           ),
         }}
       />
@@ -85,10 +77,5 @@ const styles = StyleSheet.create({
   tabBarItem: {
     paddingTop: 4,
   },
-  activeIconContainer: {
-    backgroundColor: COLORS.accentGreen + '20',
-    padding: 8,
-    borderRadius: RADIUS.md,
-    marginBottom: -4,
-  },
+
 });
