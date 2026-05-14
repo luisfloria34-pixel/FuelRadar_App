@@ -10,15 +10,18 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 import { COLORS, SPACING, RADIUS } from '../src/constants/theme';
 import { useStore } from '../src/store/useStore';
+import { LocationPermissionModal } from '../src/components/LocationPermissionModal';
 
 const { width } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { setHasSeenOnboarding, t, language } = useStore();
+  const { setHasSeenOnboarding, t, language, setLocationPermissionStatus, setLocation } = useStore();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showLocationModal, setShowLocationModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
 
@@ -46,16 +49,45 @@ export default function OnboardingScreen() {
     },
   ];
 
+  const completeOnboarding = async () => {
+    await setHasSeenOnboarding(true);
+    router.replace('/(tabs)');
+  };
+
+  const handleLocationAllow = async () => {
+    setShowLocationModal(false);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        await setLocationPermissionStatus('granted');
+        try {
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+          setLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        } catch {}
+      } else {
+        await setLocationPermissionStatus('denied');
+      }
+    } catch {}
+    await completeOnboarding();
+  };
+
+  const handleLocationDeny = async () => {
+    setShowLocationModal(false);
+    await setLocationPermissionStatus('denied');
+    await completeOnboarding();
+  };
+
   const handleNext = async () => {
     if (currentIndex < slides.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
     } else {
-      await setHasSeenOnboarding(true);
-      router.replace('/(tabs)');
+      // Show our location modal before entering the app — runs only once on first launch
+      setShowLocationModal(true);
     }
   };
 
   const handleSkip = async () => {
+    // Skip: location modal will appear on the home tab since status remains 'unknown'
     await setHasSeenOnboarding(true);
     router.replace('/(tabs)');
   };
@@ -106,6 +138,12 @@ export default function OnboardingScreen() {
 
   return (
     <View style={styles.container}>
+      <LocationPermissionModal
+        visible={showLocationModal}
+        onAllow={handleLocationAllow}
+        onDeny={handleLocationDeny}
+      />
+
       <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
         <Text style={styles.skipText}>{t('skip')}</Text>
       </TouchableOpacity>

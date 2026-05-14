@@ -316,7 +316,7 @@ export default function MapScreen() {
             <Text style={styles.deniedText}>
               {locationPermanentlyDenied
                 ? 'Standort gesperrt · Einstellungen öffnen'
-                : 'Kein Standort – Berlin Standard · Tippen zum Aktivieren'}
+                : 'Standort deaktiviert · Tippen zum Aktivieren'}
             </Text>
           </TouchableOpacity>
         )}

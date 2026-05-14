@@ -61,9 +61,7 @@ export default function HomeScreen() {
   const getGPS = async (): Promise<{ latitude: number; longitude: number } | null> => {
     try {
       const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.Balanced,
-        timeInterval: 5000,
-        distanceInterval: 0,
+        accuracy: Location.Accuracy.High,
       });
       return { latitude: loc.coords.latitude, longitude: loc.coords.longitude };
     } catch {
@@ -138,31 +136,37 @@ export default function HomeScreen() {
   const fetchStations = useCallback(async (lat?: number, lng?: number, rad?: number) => {
     setIsLoading(true);
     try {
-      // Default: Berlin
-      const DEFAULT_LAT = 52.520008;
-      const DEFAULT_LNG = 13.404954;
+      // Berlin — used as display fallback only, never stored as "user location"
+      const FALLBACK_LAT = 52.520008;
+      const FALLBACK_LNG = 13.404954;
 
-      let useLat = lat || DEFAULT_LAT;
-      let useLng = lng || DEFAULT_LNG;
+      let useLat: number;
+      let useLng: number;
 
-      if (lat && lng) {
+      if (lat !== undefined && lng !== undefined) {
+        // Explicit PLZ/city search result
+        useLat = lat;
+        useLng = lng;
         setLocation({ latitude: lat, longitude: lng });
       } else if (location) {
         useLat = location.latitude;
         useLng = location.longitude;
       } else {
-        // Try to get real location
+        // No location stored — request GPS permission
         try {
           const loc = await requestLocation();
           if (loc) {
             useLat = loc.latitude;
             useLng = loc.longitude;
-            setLocation(loc);
+            // setLocation is called inside requestLocation → handleLocationAllow
           } else {
-            setLocation({ latitude: DEFAULT_LAT, longitude: DEFAULT_LNG });
+            // Denied or GPS failed — use fallback for API only, do NOT store as user location
+            useLat = FALLBACK_LAT;
+            useLng = FALLBACK_LNG;
           }
         } catch {
-          setLocation({ latitude: DEFAULT_LAT, longitude: DEFAULT_LNG });
+          useLat = FALLBACK_LAT;
+          useLng = FALLBACK_LNG;
         }
       }
 
@@ -260,7 +264,7 @@ export default function HomeScreen() {
       {locationDenied && (
         <TouchableOpacity style={styles.deniedBanner} onPress={() => Linking.openSettings()}>
           <Ionicons name="location-outline" size={14} color="#F59E0B" />
-          <Text style={styles.deniedText}>Kein Standort – Berlin als Standard</Text>
+          <Text style={styles.deniedText}>Standort deaktiviert · PLZ suchen oder aktivieren</Text>
           <TouchableOpacity onPress={() => { setLocationDenied(false); fetchStations(); }}>
             <Ionicons name="refresh" size={14} color="#F59E0B" />
           </TouchableOpacity>

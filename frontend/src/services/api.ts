@@ -9,6 +9,7 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 // FastAPI backend (favorites, alerts, device registration).
 // All calls are wrapped in try-catch by useStore so a missing URL is safe.
 const BACKEND_URL = process.env.EXPO_PUBLIC_API_URL ?? null;
+export const IS_BACKEND_CONFIGURED = !!BACKEND_URL;
 
 // ─── Edge-Function helpers (GET with query params) ───────────────────────────
 

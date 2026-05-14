@@ -25,6 +25,7 @@ import {
   registerForPushNotifications,
   PermissionStatus,
 } from '../../src/hooks/useNotifications';
+import { IS_BACKEND_CONFIGURED } from '../../src/services/api';
 
 export default function AlertsScreen() {
   const { alerts, addAlert, removeAlert, toggleAlert, deviceId, language } = useStore();
@@ -126,6 +127,16 @@ export default function AlertsScreen() {
           <Ionicons name="add" size={24} color={COLORS.background} />
         </TouchableOpacity>
       </View>
+
+      {/* Backend not configured warning */}
+      {!IS_BACKEND_CONFIGURED && (
+        <View style={styles.backendWarning}>
+          <Ionicons name="cloud-offline-outline" size={16} color={COLORS.accentAmber} />
+          <Text style={styles.backendWarningText}>
+            Preisalarme benötigen eine aktive Serververbindung.
+          </Text>
+        </View>
+      )}
 
       {/* Notification permission banner */}
       {permissionStatus !== 'granted' && (
@@ -251,6 +262,15 @@ export default function AlertsScreen() {
               </TouchableOpacity>
             </View>
 
+            {!IS_BACKEND_CONFIGURED && (
+              <View style={styles.modalBackendNote}>
+                <Ionicons name="information-circle-outline" size={14} color={COLORS.accentAmber} />
+                <Text style={styles.modalBackendNoteText}>
+                  Kein Backend konfiguriert – Push-Benachrichtigungen sind nicht verfügbar.
+                </Text>
+              </View>
+            )}
+
             <Text style={styles.inputLabel}>Kraftstoffart</Text>
             <View style={styles.fuelOptions}>
               {(['diesel', 'e5', 'e10'] as FuelType[]).map((type) => (
@@ -344,6 +364,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...SHADOWS.medium,
+  },
+  // Backend warning
+  backendWarning: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm + 2,
+    backgroundColor: 'rgba(255,179,64,0.08)',
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: COLORS.accentAmber + '40',
+  },
+  backendWarningText: {
+    flex: 1,
+    fontSize: 13,
+    color: COLORS.accentAmber,
+    lineHeight: 18,
+  },
+  modalBackendNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    backgroundColor: 'rgba(255,179,64,0.08)',
+    borderRadius: RADIUS.md,
+    padding: SPACING.sm,
+    marginBottom: SPACING.lg,
+  },
+  modalBackendNoteText: {
+    flex: 1,
+    fontSize: 12,
+    color: COLORS.accentAmber,
+    lineHeight: 17,
   },
   // Permission banner
   permissionBanner: {
