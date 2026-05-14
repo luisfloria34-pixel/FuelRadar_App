@@ -1,13 +1,7 @@
 import React, { useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, RADIUS, SPACING, SHADOWS, TYPOGRAPHY } from '../constants/theme';
+import { COLORS, RADIUS, SPACING, SHADOWS } from '../constants/theme';
 import { Station } from '../types';
 import { useStore } from '../store/useStore';
 
@@ -26,7 +20,7 @@ export const PremiumStationCard: React.FC<PremiumStationCardProps> = ({
   isFavorite = false,
   rank,
 }) => {
-  const { selectedFuelType } = useStore();
+  const { selectedFuelType, t } = useStore();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const favAnim = useRef(new Animated.Value(1)).current;
 
@@ -36,11 +30,7 @@ export const PremiumStationCard: React.FC<PremiumStationCardProps> = ({
     if (!p) return null;
     const str = p.toFixed(3);
     const [euros, decimals] = str.split('.');
-    return {
-      euros,
-      mainCents: decimals.slice(0, 2),
-      superDigit: decimals.slice(2),
-    };
+    return { euros, mainCents: decimals.slice(0, 2), superDigit: decimals.slice(2) };
   };
 
   const formatDistance = (dist: number) => {
@@ -48,37 +38,20 @@ export const PremiumStationCard: React.FC<PremiumStationCardProps> = ({
     return `${dist.toFixed(1).replace('.', ',')} km`;
   };
 
-  const getTimeAgo = () => {
-    const mins = Math.floor(Math.random() * 10) + 1;
-    return `Vor ${mins} Min.`;
-  };
-
   const getFuelLabel = () => {
-    switch (selectedFuelType) {
-      case 'diesel': return 'Diesel';
-      case 'e5': return 'Super E5';
-      case 'e10': return 'Super E10';
-    }
+    if (selectedFuelType === 'diesel') return t('diesel');
+    if (selectedFuelType === 'e5') return t('superE5');
+    return t('superE10');
   };
 
-  const getFuelColor = () => {
-    return COLORS[selectedFuelType] || COLORS.accentGreen;
-  };
+  const getFuelColor = () => COLORS[selectedFuelType] || COLORS.accentGreen;
 
   const handlePressIn = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 0.97,
-      useNativeDriver: true,
-      friction: 8,
-    }).start();
+    Animated.spring(scaleAnim, { toValue: 0.97, useNativeDriver: true, friction: 8 }).start();
   };
 
   const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 5,
-    }).start();
+    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, friction: 5 }).start();
   };
 
   const handleFavoritePress = () => {
@@ -104,9 +77,20 @@ export const PremiumStationCard: React.FC<PremiumStationCardProps> = ({
       >
         {/* Rank Badge */}
         {rank !== undefined && rank < 3 && (
-          <View style={[styles.rankStrip, rank === 0 && styles.rankGold, rank === 1 && styles.rankSilver, rank === 2 && styles.rankBronze]}>
-            <Ionicons name={rank === 0 ? 'trophy' : 'medal'} size={12} color={rank === 0 ? '#FFD700' : rank === 1 ? '#C0C0C0' : '#CD7F32'} />
-            <Text style={styles.rankText}>{rank === 0 ? 'Günstigster' : `${rank + 1}. Platz`}</Text>
+          <View style={[
+            styles.rankStrip,
+            rank === 0 && styles.rankGold,
+            rank === 1 && styles.rankSilver,
+            rank === 2 && styles.rankBronze,
+          ]}>
+            <Ionicons
+              name={rank === 0 ? 'trophy' : 'medal'}
+              size={12}
+              color={rank === 0 ? '#FFD700' : rank === 1 ? '#C0C0C0' : '#CD7F32'}
+            />
+            <Text style={styles.rankText}>
+              {rank === 0 ? t('cheapest') : `${rank + 1}.`}
+            </Text>
           </View>
         )}
 
@@ -117,7 +101,7 @@ export const PremiumStationCard: React.FC<PremiumStationCardProps> = ({
             <Text style={styles.brand} numberOfLines={1}>{station.brand || station.name}</Text>
             {!station.is_open && (
               <View style={styles.closedBadge}>
-                <Text style={styles.closedText}>Geschlossen</Text>
+                <Text style={styles.closedText}>{t('closed')}</Text>
               </View>
             )}
           </View>
@@ -138,7 +122,7 @@ export const PremiumStationCard: React.FC<PremiumStationCardProps> = ({
           )}
         </View>
 
-        {/* Price Section — Dominant */}
+        {/* Price Section */}
         <View style={styles.priceSection}>
           {priceParts ? (
             <View style={styles.priceRow}>
@@ -158,22 +142,23 @@ export const PremiumStationCard: React.FC<PremiumStationCardProps> = ({
           </View>
         </View>
 
-        {/* Meta: Distance + Time — Clear Hierarchy */}
+        {/* Meta: Distance + stable timestamp */}
         <View style={styles.metaBar}>
           <View style={styles.metaItem}>
             <Ionicons name="navigate-outline" size={14} color={COLORS.textSecondary} />
-            <Text style={styles.distanceText}>{formatDistance(station.dist)} entfernt</Text>
+            <Text style={styles.distanceText}>{formatDistance(station.dist)} {t('away')}</Text>
           </View>
           <View style={styles.metaDot} />
           <View style={styles.metaItem}>
             <Ionicons name="time-outline" size={13} color={COLORS.textMuted} />
-            <Text style={styles.timeText}>{getTimeAgo()}</Text>
+            {/* Stable label — TankerKönig list API has no timestamp field */}
+            <Text style={styles.timeText}>{t('updated')}</Text>
           </View>
           {station.is_open && (
             <>
               <View style={styles.metaDot} />
               <View style={styles.liveDot} />
-              <Text style={styles.liveText}>Live</Text>
+              <Text style={styles.liveText}>{t('live')}</Text>
             </>
           )}
         </View>
@@ -184,157 +169,44 @@ export const PremiumStationCard: React.FC<PremiumStationCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: RADIUS.xl,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
+    backgroundColor: COLORS.cardBackground, borderRadius: RADIUS.xl, padding: SPACING.lg,
+    marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card,
   },
-  closed: {
-    opacity: 0.5,
-  },
+  closed: { opacity: 0.5 },
   rankStrip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: SPACING.sm + 2,
-    paddingVertical: 4,
-    borderRadius: RADIUS.md,
-    marginBottom: SPACING.sm,
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
+    paddingHorizontal: SPACING.sm + 2, paddingVertical: 4,
+    borderRadius: RADIUS.md, marginBottom: SPACING.sm,
   },
   rankGold: { backgroundColor: 'rgba(255, 215, 0, 0.15)' },
   rankSilver: { backgroundColor: 'rgba(192, 192, 192, 0.15)' },
   rankBronze: { backgroundColor: 'rgba(205, 127, 50, 0.15)' },
   rankText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.textSecondary,
-    marginLeft: 5,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    fontSize: 11, fontWeight: '700', color: COLORS.textSecondary, marginLeft: 5,
+    textTransform: 'uppercase', letterSpacing: 0.3,
   },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  fuelDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: SPACING.sm,
-  },
-  brand: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-    flex: 1,
-  },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md },
+  brandRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  fuelDot: { width: 10, height: 10, borderRadius: 5, marginRight: SPACING.sm },
+  brand: { fontSize: 17, fontWeight: '600', color: COLORS.textPrimary, flex: 1 },
   closedBadge: {
-    backgroundColor: COLORS.accentRed + '20',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: 3,
-    borderRadius: RADIUS.sm,
-    marginLeft: SPACING.sm,
+    backgroundColor: COLORS.accentRed + '20', paddingHorizontal: SPACING.sm,
+    paddingVertical: 3, borderRadius: RADIUS.sm, marginLeft: SPACING.sm,
   },
-  closedText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.accentRed,
-  },
-  priceSection: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    marginBottom: SPACING.md,
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  priceMain: {
-    fontSize: 38,
-    fontWeight: '800',
-    color: COLORS.textPrimary,
-    letterSpacing: -1.5,
-    lineHeight: 42,
-  },
-  priceSuper: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  priceCurrency: {
-    fontSize: 18,
-    fontWeight: '400',
-    color: COLORS.textSecondary,
-    marginLeft: 3,
-    marginTop: 4,
-  },
-  priceNA: {
-    fontSize: 32,
-    fontWeight: '500',
-    color: COLORS.textMuted,
-  },
-  fuelBadge: {
-    paddingHorizontal: SPACING.sm + 4,
-    paddingVertical: 6,
-    borderRadius: RADIUS.md,
-  },
-  fuelBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-  },
-  metaBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: SPACING.sm + 2,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  distanceText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: COLORS.textSecondary,
-    marginLeft: 4,
-  },
-  metaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: COLORS.textMuted,
-    marginHorizontal: SPACING.sm,
-  },
-  timeText: {
-    fontSize: 12,
-    color: COLORS.textMuted,
-    marginLeft: 4,
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.accentGreen,
-  },
-  liveText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: COLORS.accentGreen,
-    marginLeft: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
+  closedText: { fontSize: 11, fontWeight: '700', color: COLORS.accentRed },
+  priceSection: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: SPACING.md },
+  priceRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  priceMain: { fontSize: 38, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: -1.5, lineHeight: 42 },
+  priceSuper: { fontSize: 20, fontWeight: '700', marginTop: 2 },
+  priceCurrency: { fontSize: 18, fontWeight: '400', color: COLORS.textSecondary, marginLeft: 3, marginTop: 4 },
+  priceNA: { fontSize: 32, fontWeight: '500', color: COLORS.textMuted },
+  fuelBadge: { paddingHorizontal: SPACING.sm + 4, paddingVertical: 6, borderRadius: RADIUS.md },
+  fuelBadgeText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.3 },
+  metaBar: { flexDirection: 'row', alignItems: 'center', paddingTop: SPACING.sm + 2, borderTopWidth: 1, borderTopColor: COLORS.border },
+  metaItem: { flexDirection: 'row', alignItems: 'center' },
+  distanceText: { fontSize: 13, fontWeight: '500', color: COLORS.textSecondary, marginLeft: 4 },
+  metaDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: COLORS.textMuted, marginHorizontal: SPACING.sm },
+  timeText: { fontSize: 12, color: COLORS.textMuted, marginLeft: 4 },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: COLORS.accentGreen },
+  liveText: { fontSize: 11, fontWeight: '700', color: COLORS.accentGreen, marginLeft: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
 });

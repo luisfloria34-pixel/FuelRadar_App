@@ -141,9 +141,26 @@ export const translations = {
     aboutApp: 'Über die App',
     langSection: 'Sprache',
 
+    // Favorite toast
+    favoriteAdded: 'Zu Favoriten hinzugefügt',
+    favoriteRemoved: 'Aus Favoriten entfernt',
+
+    // Stable timestamp fallback (no real field from TankerKönig list API)
+    updated: 'Aktualisiert',
+
+    // Station detail
+    alertSetHint: 'Alarm setzen',
+    create: 'Erstellen',
+
+    // Settings / misc
+    onboardingResetSuccess: 'Das Onboarding wird beim nächsten Start erneut angezeigt.',
+    radius: 'Radius',
+    saveFavoritesHint: 'Speichere deine bevorzugten Tankstellen, um jederzeit schnell auf deren aktuelle Preise zuzugreifen.',
+
     // Language Change Dialog (required)
-    language_change_title: 'Sprache ändern',
-    language_change_body: 'App wird neu gestartet.',
+    language_change_title: 'Sprache ändern?',
+    language_change_body_to_en: 'Möchtest du die App wirklich auf Englisch umstellen?',
+    language_change_body_to_de: 'Möchtest du die App wirklich auf Deutsch umstellen?',
     language_change_cancel: 'Abbrechen',
     language_change_confirm: 'Bestätigen',
 
@@ -323,9 +340,26 @@ export const translations = {
     aboutApp: 'About the App',
     langSection: 'Language',
 
+    // Favorite toast
+    favoriteAdded: 'Added to favorites',
+    favoriteRemoved: 'Removed from favorites',
+
+    // Stable timestamp fallback
+    updated: 'Updated',
+
+    // Station detail
+    alertSetHint: 'Set alert',
+    create: 'Create',
+
+    // Settings / misc
+    onboardingResetSuccess: 'Onboarding will be shown again on next start.',
+    radius: 'Radius',
+    saveFavoritesHint: 'Save your preferred stations for quick access to current prices.',
+
     // Language Change Dialog (required)
-    language_change_title: 'Change Language',
-    language_change_body: 'App will restart.',
+    language_change_title: 'Change language?',
+    language_change_body_to_en: 'Do you really want to switch the app to English?',
+    language_change_body_to_de: 'Do you really want to switch the app to German?',
     language_change_cancel: 'Cancel',
     language_change_confirm: 'Confirm',
 

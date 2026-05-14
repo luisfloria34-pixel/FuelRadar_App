@@ -17,7 +17,7 @@ export const StationCard: React.FC<StationCardProps> = ({
   onPress,
   showAllPrices = false,
 }) => {
-  const { selectedFuelType, isFavorite } = useStore();
+  const { selectedFuelType, isFavorite, t } = useStore();
   const favorite = isFavorite(station.id);
 
   const getPrice = () => {
@@ -76,7 +76,7 @@ export const StationCard: React.FC<StationCardProps> = ({
         </View>
         <View style={[styles.statusBadge, station.is_open ? styles.open : styles.closedBadge]}>
           <Text style={[styles.statusText, station.is_open ? styles.openText : styles.closedText]}>
-            {station.is_open ? 'Geöffnet' : 'Geschlossen'}
+            {station.is_open ? t('open') : t('closed')}
           </Text>
         </View>
       </View>

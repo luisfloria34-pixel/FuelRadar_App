@@ -22,7 +22,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
   averagePrice,
   onPress,
 }) => {
-  const { selectedFuelType } = useStore();
+  const { selectedFuelType, t } = useStore();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -51,7 +51,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
     return `${dist.toFixed(1).replace('.', ',')} km`;
   };
 
-  const fuelLabel = selectedFuelType === 'diesel' ? 'Diesel' : selectedFuelType === 'e5' ? 'Super E5' : 'Super E10';
+  const fuelLabel = selectedFuelType === 'diesel' ? t('diesel') : selectedFuelType === 'e5' ? t('superE5') : t('superE10');
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, { toValue: 0.97, useNativeDriver: true, friction: 8 }).start();
@@ -73,7 +73,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
         {/* Live Badge */}
         <View style={styles.liveBadge}>
           <Animated.View style={[styles.liveDot, { opacity: pulseAnim }]} />
-          <Text style={styles.liveText}>LIVE-EMPFEHLUNG</Text>
+          <Text style={styles.liveText}>{t('liveRecommendation')}</Text>
         </View>
 
         {/* Content */}
@@ -91,7 +91,7 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
                 -{savings.toFixed(2).replace('.', ',')} €/L
               </Text>
             </View>
-            <Text style={styles.savingsPercent}>{savingsPercent}% günstiger</Text>
+            <Text style={styles.savingsPercent}>{savingsPercent}% {t('cheaperThanAvg')}</Text>
           </View>
         </View>
 
@@ -99,10 +99,10 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
         <View style={styles.footer}>
           <View style={styles.distRow}>
             <Ionicons name="navigate-outline" size={14} color={COLORS.textSecondary} />
-            <Text style={styles.distText}>{formatDistance(cheapestStation.dist)} entfernt</Text>
+            <Text style={styles.distText}>{formatDistance(cheapestStation.dist)} {t('away')}</Text>
           </View>
           <View style={styles.ctaRow}>
-            <Text style={styles.ctaText}>Anzeigen</Text>
+            <Text style={styles.ctaText}>{t('show')}</Text>
             <Ionicons name="chevron-forward" size={16} color={COLORS.accentGreen} />
           </View>
         </View>

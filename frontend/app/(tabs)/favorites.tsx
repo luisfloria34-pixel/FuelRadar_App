@@ -17,7 +17,7 @@ import { fuelApi } from '../../src/services/api';
 
 export default function FavoritesScreen() {
   const router = useRouter();
-  const { favorites, removeFavorite, selectedFuelType } = useStore();
+  const { favorites, removeFavorite, selectedFuelType, t } = useStore();
   const [prices, setPrices] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
 
@@ -42,16 +42,16 @@ export default function FavoritesScreen() {
 
   const handleRemoveFavorite = (stationId: string, stationName: string) => {
     Alert.alert(
-      'Favorit entfernen',
-      `${stationName} aus den Favoriten entfernen?`,
+      t('removeFavorite'),
+      `${stationName} ${t('removeFavoriteConfirm')}`,
       [
-        { text: 'Abbrechen', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Entfernen',
+          text: t('remove'),
           style: 'destructive',
           onPress: () => removeFavorite(stationId),
         },
-      ]
+      ],
     );
   };
 
@@ -61,20 +61,20 @@ export default function FavoritesScreen() {
   };
 
   const fuelLabels: Record<string, string> = {
-    diesel: 'Diesel',
-    e5: 'E5',
-    e10: 'E10',
+    diesel: t('diesel'),
+    e5: t('superE5'),
+    e10: t('superE10'),
   };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title} testID="favorites-title">Favoriten</Text>
+          <Text style={styles.title} testID="favorites-title">{t('favorites')}</Text>
           <Text style={styles.subtitle}>
             {favorites.length > 0
-              ? `${favorites.length} gespeicherte Tankstellen`
-              : 'Deine Lieblingstankstellen'}
+              ? `${favorites.length} ${t('savedStations')}`
+              : t('yourFavoriteStations')}
           </Text>
         </View>
       </View>
@@ -89,10 +89,8 @@ export default function FavoritesScreen() {
             <View style={styles.emptyIcon}>
               <Ionicons name="heart-outline" size={44} color={COLORS.textMuted} />
             </View>
-            <Text style={styles.emptyTitle}>Noch keine Favoriten</Text>
-            <Text style={styles.emptySubtitle}>
-              Speichere deine bevorzugten Tankstellen, um jederzeit schnell auf deren aktuelle Preise zuzugreifen.
-            </Text>
+            <Text style={styles.emptyTitle}>{t('noFavoritesYet')}</Text>
+            <Text style={styles.emptySubtitle}>{t('saveFavoritesDescription')}</Text>
             <TouchableOpacity
               testID="explore-stations-btn"
               style={styles.exploreButton}
@@ -100,17 +98,13 @@ export default function FavoritesScreen() {
               activeOpacity={0.8}
             >
               <Ionicons name="compass-outline" size={20} color={COLORS.background} />
-              <Text style={styles.exploreButtonText}>Tankstellen entdecken</Text>
+              <Text style={styles.exploreButtonText}>{t('discoverStations')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <>
             {loading && (
-              <ActivityIndicator
-                size="small"
-                color={COLORS.accentGreen}
-                style={styles.loader}
-              />
+              <ActivityIndicator size="small" color={COLORS.accentGreen} style={styles.loader} />
             )}
             {favorites.map((favorite) => {
               const stationPrices = prices[favorite.station_id];
@@ -150,15 +144,20 @@ export default function FavoritesScreen() {
                     {stationPrices ? (
                       <View style={styles.priceRow}>
                         {(['diesel', 'e5', 'e10'] as const).map((fuel) => (
-                          <View key={fuel} style={[
-                            styles.priceItem,
-                            selectedFuelType === fuel && styles.priceItemHighlighted,
-                          ]}>
+                          <View
+                            key={fuel}
+                            style={[
+                              styles.priceItem,
+                              selectedFuelType === fuel && styles.priceItemHighlighted,
+                            ]}
+                          >
                             <Text style={styles.priceLabel}>{fuelLabels[fuel]}</Text>
-                            <Text style={[
-                              styles.priceValue,
-                              selectedFuelType === fuel && styles.priceValueHighlighted,
-                            ]}>
+                            <Text
+                              style={[
+                                styles.priceValue,
+                                selectedFuelType === fuel && styles.priceValueHighlighted,
+                              ]}
+                            >
                               {formatPrice(stationPrices[fuel])}
                             </Text>
                           </View>
@@ -166,7 +165,7 @@ export default function FavoritesScreen() {
                       </View>
                     ) : (
                       <View style={styles.priceRow}>
-                        <Text style={styles.loadingPriceText}>Preise laden...</Text>
+                        <Text style={styles.loadingPriceText}>{t('loadingPricesShort')}</Text>
                       </View>
                     )}
                   </View>
@@ -177,12 +176,12 @@ export default function FavoritesScreen() {
                       <View style={[styles.statusBadge, isOpen ? styles.openBadge : styles.closedBadge]}>
                         <View style={[styles.statusDot, { backgroundColor: isOpen ? COLORS.accentGreen : COLORS.accentRed }]} />
                         <Text style={[styles.statusText, isOpen ? styles.openText : styles.closedText]}>
-                          {isOpen ? 'Geöffnet' : 'Geschlossen'}
+                          {isOpen ? t('open') : t('closed')}
                         </Text>
                       </View>
                     )}
                     <View style={styles.detailsLink}>
-                      <Text style={styles.detailsText}>Details</Text>
+                      <Text style={styles.detailsText}>{t('details')}</Text>
                       <Ionicons name="chevron-forward" size={16} color={COLORS.accentGreen} />
                     </View>
                   </View>
@@ -197,195 +196,64 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  header: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
-  },
-  title: {
-    ...TYPOGRAPHY.h1,
-    color: COLORS.textPrimary,
-  },
-  subtitle: {
-    fontSize: 15,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: SPACING.lg,
-    paddingBottom: 120,
-  },
-  loader: {
-    marginBottom: SPACING.md,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: SPACING.xxxl,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  header: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
+  title: { ...TYPOGRAPHY.h1, color: COLORS.textPrimary },
+  subtitle: { fontSize: 15, color: COLORS.textSecondary, marginTop: 2 },
+  scrollView: { flex: 1 },
+  content: { paddingHorizontal: SPACING.lg, paddingBottom: 120 },
+  loader: { marginBottom: SPACING.md },
+  emptyState: { alignItems: 'center', paddingVertical: SPACING.xxxl },
   emptyIcon: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: COLORS.cardBackground,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    width: 96, height: 96, borderRadius: 48, backgroundColor: COLORS.cardBackground,
+    alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.lg,
+    borderWidth: 1, borderColor: COLORS.border,
   },
-  emptyTitle: {
-    ...TYPOGRAPHY.h3,
-    color: COLORS.textPrimary,
-    marginBottom: SPACING.sm,
-  },
+  emptyTitle: { ...TYPOGRAPHY.h3, color: COLORS.textPrimary, marginBottom: SPACING.sm },
   emptySubtitle: {
-    fontSize: 14,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    paddingHorizontal: SPACING.xl,
-    lineHeight: 21,
-    marginBottom: SPACING.lg,
+    fontSize: 14, color: COLORS.textSecondary, textAlign: 'center',
+    paddingHorizontal: SPACING.xl, lineHeight: 21, marginBottom: SPACING.lg,
   },
   exploreButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.accentGreen,
-    paddingVertical: SPACING.sm + 4,
-    paddingHorizontal: SPACING.xl,
-    borderRadius: RADIUS.xl,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.accentGreen,
+    paddingVertical: SPACING.sm + 4, paddingHorizontal: SPACING.xl, borderRadius: RADIUS.xl,
   },
-  exploreButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.background,
-    marginLeft: SPACING.sm,
-  },
+  exploreButtonText: { fontSize: 16, fontWeight: '600', color: COLORS.background, marginLeft: SPACING.sm },
   favoriteCard: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: RADIUS.xl,
-    padding: SPACING.lg,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.card,
+    backgroundColor: COLORS.cardBackground, borderRadius: RADIUS.xl, padding: SPACING.lg,
+    marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border, ...SHADOWS.card,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-  },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.md },
   brandIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: RADIUS.lg,
-    backgroundColor: COLORS.accentBlue + '15',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING.md,
+    width: 44, height: 44, borderRadius: RADIUS.lg, backgroundColor: COLORS.accentBlue + '15',
+    alignItems: 'center', justifyContent: 'center', marginRight: SPACING.md,
   },
-  stationInfo: {
-    flex: 1,
-  },
-  stationName: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
-  },
-  stationBrand: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  removeButton: {
-    padding: SPACING.xs,
-  },
-  pricesContainer: {
-    marginBottom: SPACING.md,
-  },
+  stationInfo: { flex: 1 },
+  stationName: { fontSize: 17, fontWeight: '600', color: COLORS.textPrimary },
+  stationBrand: { fontSize: 13, color: COLORS.textSecondary, marginTop: 2 },
+  removeButton: { padding: SPACING.xs },
+  pricesContainer: { marginBottom: SPACING.md },
   priceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: COLORS.cardSecondary,
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
+    flexDirection: 'row', justifyContent: 'space-around', backgroundColor: COLORS.cardSecondary,
+    borderRadius: RADIUS.lg, padding: SPACING.md,
   },
-  priceItem: {
-    alignItems: 'center',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.md,
-  },
-  priceItemHighlighted: {
-    backgroundColor: COLORS.accentGreen + '15',
-  },
+  priceItem: { alignItems: 'center', paddingHorizontal: SPACING.sm, paddingVertical: SPACING.xs, borderRadius: RADIUS.md },
+  priceItemHighlighted: { backgroundColor: COLORS.accentGreen + '15' },
   priceLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: 11, fontWeight: '600', color: COLORS.textSecondary, marginBottom: 4,
+    textTransform: 'uppercase', letterSpacing: 0.5,
   },
-  priceValue: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-  },
-  priceValueHighlighted: {
-    color: COLORS.accentGreen,
-  },
-  loadingPriceText: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.sm + 2,
-    paddingVertical: 5,
-    borderRadius: RADIUS.md,
-  },
-  openBadge: {
-    backgroundColor: COLORS.accentGreen + '15',
-  },
-  closedBadge: {
-    backgroundColor: COLORS.accentRed + '15',
-  },
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    marginRight: 5,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  openText: {
-    color: COLORS.accentGreen,
-  },
-  closedText: {
-    color: COLORS.accentRed,
-  },
-  detailsLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  detailsText: {
-    fontSize: 14,
-    color: COLORS.accentGreen,
-    fontWeight: '600',
-    marginRight: 2,
-  },
+  priceValue: { fontSize: 17, fontWeight: '700', color: COLORS.textPrimary },
+  priceValueHighlighted: { color: COLORS.accentGreen },
+  loadingPriceText: { fontSize: 13, color: COLORS.textMuted },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.sm + 2, paddingVertical: 5, borderRadius: RADIUS.md },
+  openBadge: { backgroundColor: COLORS.accentGreen + '15' },
+  closedBadge: { backgroundColor: COLORS.accentRed + '15' },
+  statusDot: { width: 7, height: 7, borderRadius: 3.5, marginRight: 5 },
+  statusText: { fontSize: 12, fontWeight: '600' },
+  openText: { color: COLORS.accentGreen },
+  closedText: { color: COLORS.accentRed },
+  detailsLink: { flexDirection: 'row', alignItems: 'center' },
+  detailsText: { fontSize: 14, color: COLORS.accentGreen, fontWeight: '600', marginRight: 2 },
 });

@@ -20,7 +20,7 @@ interface PLZSearchBarProps {
 }
 
 export const PLZSearchBar: React.FC<PLZSearchBarProps> = ({ onSearchComplete }) => {
-  const { searchRadius, setSearchRadius, setSearchQuery, setSearchLocationName } = useStore();
+  const { searchRadius, setSearchRadius, setSearchQuery, setSearchLocationName, t } = useStore();
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [locationLabel, setLocationLabel] = useState('');
@@ -98,7 +98,7 @@ export const PLZSearchBar: React.FC<PLZSearchBarProps> = ({ onSearchComplete }) 
             ref={inputRef}
             testID="plz-search-input"
             style={styles.input}
-            placeholder="PLZ oder Ort eingeben"
+            placeholder={t('searchPLZ')}
             placeholderTextColor={COLORS.textMuted}
             value={query}
             onChangeText={setQuery}
@@ -142,7 +142,7 @@ export const PLZSearchBar: React.FC<PLZSearchBarProps> = ({ onSearchComplete }) 
 
       {/* Radius Selector */}
       <View style={styles.radiusRow}>
-        <Text style={styles.radiusLabel}>Radius</Text>
+        <Text style={styles.radiusLabel}>{t('radius')}</Text>
         <View style={styles.radiusOptions}>
           {RADIUS_OPTIONS.map((r) => (
             <TouchableOpacity
