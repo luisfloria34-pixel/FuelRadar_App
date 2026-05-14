@@ -25,7 +25,7 @@ export default function TabLayout() {
           title: t('home'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+              <Ionicons name="home-outline" size={24} color={color} />
             </View>
           ),
         }}
@@ -36,7 +36,7 @@ export default function TabLayout() {
           title: t('map'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name={focused ? 'map' : 'map-outline'} size={24} color={color} />
+              <Ionicons name="map-outline" size={24} color={color} />
             </View>
           ),
         }}
@@ -47,7 +47,7 @@ export default function TabLayout() {
           title: t('alertsTab'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={24} color={color} />
+              <Ionicons name="notifications-outline" size={24} color={color} />
             </View>
           ),
         }}
@@ -58,7 +58,7 @@ export default function TabLayout() {
           title: t('favoritesTab'),
           tabBarIcon: ({ color, focused }) => (
             <View style={focused ? styles.activeIconContainer : undefined}>
-              <Ionicons name={focused ? 'heart' : 'heart-outline'} size={24} color={color} />
+              <Ionicons name="heart-outline" size={24} color={color} />
             </View>
           ),
         }}
