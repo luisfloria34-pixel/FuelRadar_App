@@ -45,11 +45,18 @@ async function setupAndroidChannel() {
   });
 }
 
+const isExpoGo = Constants.executionEnvironment === 'storeClient';
+
 export async function registerForPushNotifications(
   deviceId: string,
   locale: string = 'de'
 ): Promise<string | null> {
   if (Platform.OS === 'web') return null;
+
+  if (isExpoGo) {
+    console.warn('[Notifications] Push tokens not supported in Expo Go. Use an EAS development build or production build.');
+    return null;
+  }
 
   const status = await requestNotificationPermissions();
   if (status !== 'granted') return null;

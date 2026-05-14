@@ -90,9 +90,7 @@ export default function MapScreen() {
     if (granted) {
       try {
         const pos = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.Balanced,
-          timeInterval: 5000,
-          distanceInterval: 0,
+          accuracy: Location.Accuracy.High,
         });
         const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setMapCenter(c);
@@ -176,6 +174,25 @@ export default function MapScreen() {
       }, 1000);
     }
   };
+
+  const handleLocateMe = useCallback(async () => {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      setShowLocationModal(true);
+      return;
+    }
+    try {
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      setMapCenter(c);
+      setLocation({ latitude: c.lat, longitude: c.lng });
+      flyTo(c, 14);
+      fetchStations(c.lat, c.lng, searchRadiusRef.current);
+      setLocationDenied(false);
+    } catch (e) {
+      console.warn('[Location] Could not get current position:', e);
+    }
+  }, [fetchStations]);
 
   const handleSearch = useCallback(async () => {
     const q = searchQuery.trim();
@@ -394,6 +411,16 @@ export default function MapScreen() {
         </Animated.View>
       )}
 
+      {/* Locate me FAB */}
+      <TouchableOpacity
+        testID="map-locate-me-btn"
+        style={styles.locateMeBtn}
+        onPress={handleLocateMe}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="locate" size={22} color={COLORS.textPrimary} />
+      </TouchableOpacity>
+
       {/* Station count */}
       {!selectedStation && openCount > 0 && !isLoading && (
         <View style={styles.countBadge}>
@@ -478,6 +505,12 @@ pillRow: { marginTop: SPACING.sm },
     alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#2A2F38',
   },
   favBtnActive: { borderColor: '#EF4444', backgroundColor: 'rgba(239,68,68,0.1)' },
+  locateMeBtn: {
+    position: 'absolute', bottom: 160, right: SPACING.md,
+    width: 48, height: 48, borderRadius: RADIUS.xl,
+    backgroundColor: 'rgba(20,22,26,0.92)', borderWidth: 1, borderColor: COLORS.border,
+    alignItems: 'center', justifyContent: 'center', zIndex: 15, ...SHADOWS.elevated,
+  },
   countBadge: {
     position: 'absolute', bottom: 96, alignSelf: 'center',
     flexDirection: 'row', alignItems: 'center',

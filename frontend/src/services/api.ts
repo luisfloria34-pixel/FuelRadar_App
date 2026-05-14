@@ -55,7 +55,10 @@ async function backendFetch<T>(
   path: string,
   opts: { deviceId?: string; body?: Record<string, unknown> } = {},
 ): Promise<T> {
-  if (!BACKEND_URL) throw new Error('EXPO_PUBLIC_API_URL not configured');
+  if (!BACKEND_URL) {
+    console.warn('[FuelRadar] EXPO_PUBLIC_API_URL not set — skipping backend call:', path);
+    return undefined as unknown as T;
+  }
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 10_000);
   try {

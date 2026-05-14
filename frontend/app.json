@@ -12,8 +12,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.luishustler.fuelradar",
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Find fuel stations near your location",
-        "NSLocationAlwaysUsageDescription": "Get alerts when nearby prices drop",
+        "NSLocationWhenInUseUsageDescription": "FuelRadar benötigt deinen Standort, um Tankstellen in deiner Nähe zu finden und die günstigsten Preise anzuzeigen.",
+        "NSLocationAlwaysUsageDescription": "FuelRadar benötigt deinen Standort im Hintergrund, um dich zu benachrichtigen, wenn Preise in deiner Nähe fallen.",
         "NSUserNotificationsUsageDescription": "FuelRadar sends you a notification when fuel prices drop below your set threshold.",
         "ITSAppUsesNonExemptEncryption": false
       },
@@ -57,7 +57,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "FuelRadar needs your location to find nearby gas stations and best fuel prices."
+          "locationAlwaysAndWhenInUsePermission": "FuelRadar benötigt deinen Standort, um Tankstellen in der Nähe zu finden und die günstigsten Kraftstoffpreise anzuzeigen."
         }
       ],
       [
