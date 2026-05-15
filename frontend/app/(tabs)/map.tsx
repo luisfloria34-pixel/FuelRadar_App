@@ -50,6 +50,7 @@ export default function MapScreen() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationDenied, setLocationDenied] = useState(false);
   const [locationPermanentlyDenied, setLocationPermanentlyDenied] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const sheetAnim = useRef(new Animated.Value(0)).current;
   const mapRef = useRef<any>(null);
   // Use refs for searchRadius / location inside async callbacks to avoid stale closures
@@ -65,16 +66,38 @@ export default function MapScreen() {
   }, [stations, selectedFuelType]);
 
   const fetchStations = useCallback(async (lat: number, lng: number, rad: number) => {
+    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('[fetchStations] Supabase env vars missing — skipping fetch, showing empty state');
+      setStations([]);
+      setFetchError('Tankstellen konnten nicht geladen werden. Bitte prüfe deine Verbindung oder versuche es später erneut.');
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
+    setFetchError(null);
     try {
       const response = await fuelApi.getNearbyStations(lat, lng, rad, 'all', 'dist');
-      if (response.ok && response.stations) setStations(response.stations);
-    } catch (error) {
-      console.error('Fetch error:', error);
+      if (response.ok && response.stations) {
+        setStations(response.stations);
+      } else {
+        setStations([]);
+      }
+    } catch (error: any) {
+      console.warn('[fetchStations] request failed, showing fallback state:', error?.message || error);
+      setStations([]);
+      setFetchError('Tankstellen konnten nicht geladen werden. Bitte prüfe deine Verbindung oder versuche es später erneut.');
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  const handleRetry = useCallback(() => {
+    setFetchError(null);
+    fetchStations(mapCenter.lat, mapCenter.lng, searchRadiusRef.current);
+  }, [fetchStations, mapCenter]);
 
   const loadLocationAndStations = useCallback(async (granted: boolean) => {
     const rad = searchRadiusRef.current;
@@ -209,7 +232,7 @@ export default function MapScreen() {
         fetchStations(r.lat, r.lng, searchRadius);
         flyTo(newCenter);
       }
-    } catch (e) { console.error('Search error:', e); }
+    } catch (e: any) { console.warn('[handleSearch] geocode failed:', e?.message || e); }
     finally { setIsSearching(false); }
   }, [searchQuery, searchRadius]);
 
@@ -319,6 +342,16 @@ export default function MapScreen() {
                 : 'Standort deaktiviert · Tippen zum Aktivieren'}
             </Text>
           </TouchableOpacity>
+        )}
+
+        {fetchError && (
+          <View style={styles.fetchErrorBanner}>
+            <Ionicons name="cloud-offline-outline" size={14} color="#F59E0B" />
+            <Text style={styles.fetchErrorText} numberOfLines={2}>{fetchError}</Text>
+            <TouchableOpacity onPress={handleRetry} style={styles.retryBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+              <Text style={styles.retryBtnText}>Erneut versuchen</Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Fuel pills */}
@@ -526,4 +559,17 @@ pillRow: { marginTop: SPACING.sm },
     marginTop: SPACING.xs,
   },
   deniedText: { fontSize: 12, color: '#F59E0B', flex: 1 },
+  fetchErrorBanner: {
+    flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6,
+    backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: RADIUS.lg,
+    paddingHorizontal: SPACING.md, paddingVertical: 8,
+    borderWidth: 1, borderColor: 'rgba(239,68,68,0.25)',
+    marginTop: SPACING.xs,
+  },
+  fetchErrorText: { fontSize: 12, color: '#FCA5A5', flex: 1, flexShrink: 1 },
+  retryBtn: {
+    backgroundColor: 'rgba(239,68,68,0.2)', borderRadius: RADIUS.md,
+    paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(239,68,68,0.4)',
+  },
+  retryBtnText: { fontSize: 12, fontWeight: '700', color: '#FCA5A5' },
 });
