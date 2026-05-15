@@ -6,7 +6,6 @@ import { useRouter } from 'expo-router';
 import { fuelApi } from '../services/api';
 import { useStore } from '../store/useStore';
 
-// Show notifications while app is in foreground
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
@@ -45,7 +44,8 @@ async function setupAndroidChannel() {
   });
 }
 
-const isExpoGo = Constants.executionEnvironment === 'storeClient';
+const SKIP_MSG =
+  '[Notifications] Push token registration skipped: EXPO_PUBLIC_API_URL missing or unsupported environment';
 
 export async function registerForPushNotifications(
   deviceId: string,
@@ -53,8 +53,15 @@ export async function registerForPushNotifications(
 ): Promise<string | null> {
   if (Platform.OS === 'web') return null;
 
-  if (isExpoGo) {
-    console.warn('[Notifications] Push tokens not supported in Expo Go. Use an EAS development build or production build.');
+  const API_URL = process.env.EXPO_PUBLIC_API_URL;
+  const isExpoGo = Constants.appOwnership === 'expo';
+
+  // Expo Go on Android SDK 53+ cannot get remote push tokens
+  if (isExpoGo && Platform.OS === 'android') {
+    console.warn(
+      '[Notifications] Expo Go on Android SDK 53+ does not support remote push notifications. ' +
+        'Use a Development Build or production build to test push notifications.'
+    );
     return null;
   }
 
@@ -62,6 +69,8 @@ export async function registerForPushNotifications(
   if (status !== 'granted') return null;
 
   await setupAndroidChannel();
+
+  let token: string | null = null;
 
   try {
     const projectId =
@@ -72,13 +81,27 @@ export async function registerForPushNotifications(
       ? await Notifications.getExpoPushTokenAsync({ projectId })
       : await Notifications.getExpoPushTokenAsync();
 
-    const token = tokenData.data;
-    await fuelApi.registerDevice(deviceId, token, Platform.OS, locale);
-    return token;
+    token = tokenData.data;
   } catch (err) {
-    console.warn('[Notifications] Push token error:', err);
+    // iOS Simulator and unsupported environments throw here — not a fatal error
+    console.warn('[Notifications] Could not get push token (simulator or unsupported env):', err);
     return null;
   }
+
+  if (!token) return null;
+
+  if (!API_URL) {
+    console.warn(SKIP_MSG);
+    return token;
+  }
+
+  try {
+    await fuelApi.registerDevice(deviceId, token, Platform.OS, locale);
+  } catch (err) {
+    console.warn('[Notifications] Backend push token registration failed:', err);
+  }
+
+  return token;
 }
 
 export function useNotifications() {
@@ -92,12 +115,8 @@ export function useNotifications() {
 
     registerForPushNotifications(deviceId, language);
 
-    // Called when a notification arrives while app is foregrounded
-    notificationListener.current = Notifications.addNotificationReceivedListener(() => {
-      // setNotificationHandler already shows the notification UI; nothing extra needed
-    });
+    notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
 
-    // Called when user taps a notification
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data as Record<string, any>;
       const navigableTypes = ['price_alert', 'station_change', 'cheaper_nearby'];
