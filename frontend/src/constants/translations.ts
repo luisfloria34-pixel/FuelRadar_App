@@ -198,6 +198,42 @@ export const translations = {
     map: 'Karte',
     alertsTab: 'Alarme',
     favoritesTab: 'Favoriten',
+
+    // Home screen
+    homeTagline: 'Finde die günstigsten Spritpreise\nin deiner Nähe',
+    stationsIn: 'Tankstellen in',
+    locationDeniedBannerText: 'Standort deaktiviert · PLZ suchen oder aktivieren',
+
+    // Map screen
+    loadingStations: 'Lade Tankstellen...',
+    locationLocked: 'Standort gesperrt · Einstellungen öffnen',
+    locationDisabled: 'Standort deaktiviert · Tippen zum Aktivieren',
+
+    // Location permission modal
+    locationBlockedTitle: 'Standort gesperrt',
+    locationRequestTitle: 'Standort freigeben?',
+    locationBlockedBody: 'Der Standort wurde dauerhaft verweigert. Bitte aktiviere ihn in den Einstellungen unter FuelRadar → Standort.',
+    locationRequestBody: 'FuelRadar zeigt dir Tankstellen in deiner Nähe und die günstigsten Preise auf der Karte.',
+    locationWhyTitle: 'Warum brauchen wir deinen Standort?',
+    locationWhyDetail: 'Dein Standort wird nur auf deinem Gerät verwendet, um Tankstellen in der Nähe zu laden. Er wird nicht gespeichert, nicht geteilt und nicht an Dritte weitergegeben.\n\nOhne Standort wird Berlin als Standardort verwendet.',
+    locationShowLess: 'Weniger anzeigen',
+    locationWhyBtn: 'Warum wird der Standort benötigt?',
+    locationNotNow: 'Nicht jetzt',
+    locationAllow: 'Erlauben',
+
+    // Alerts screen
+    notificationsDisabled: 'Benachrichtigungen deaktiviert',
+    openSettingsToEnable: 'In den Einstellungen aktivieren',
+    tapToReceiveAlerts: 'Tippe um Alarme zu erhalten',
+    active: 'Aktiv',
+    backendWarning: 'Preisalarme benötigen eine aktive Serververbindung.',
+    backendNoConfig: 'Kein Backend konfiguriert – Push-Benachrichtigungen sind nicht verfügbar.',
+    targetPricePlaceholder: 'z.B. 1,50',
+    notificationsDisabledBody: 'Öffne die Einstellungen und aktiviere Benachrichtigungen für FuelRadar.',
+    stationOptionalLabel: 'Tankstelle (optional)',
+
+    // Notifications
+    androidChannelPriceAlertsDesc: 'Benachrichtigungen wenn Kraftstoffpreise fallen',
   },
   en: {
     // General
@@ -397,6 +433,42 @@ export const translations = {
     map: 'Map',
     alertsTab: 'Alerts',
     favoritesTab: 'Favorites',
+
+    // Home screen
+    homeTagline: 'Find the cheapest fuel prices\nnear you',
+    stationsIn: 'Stations in',
+    locationDeniedBannerText: 'Location disabled · Search by postcode or activate',
+
+    // Map screen
+    loadingStations: 'Loading stations...',
+    locationLocked: 'Location locked · Open Settings',
+    locationDisabled: 'Location disabled · Tap to activate',
+
+    // Location permission modal
+    locationBlockedTitle: 'Location Locked',
+    locationRequestTitle: 'Allow Location?',
+    locationBlockedBody: 'Location was permanently denied. Please enable it in Settings under FuelRadar → Location.',
+    locationRequestBody: 'FuelRadar shows you nearby stations and the best fuel prices on the map.',
+    locationWhyTitle: 'Why do we need your location?',
+    locationWhyDetail: 'Your location is only used on your device to load nearby stations. It is not stored, shared, or passed to third parties.\n\nWithout location, Berlin is used as a default.',
+    locationShowLess: 'Show less',
+    locationWhyBtn: 'Why is location needed?',
+    locationNotNow: 'Not now',
+    locationAllow: 'Allow',
+
+    // Alerts screen
+    notificationsDisabled: 'Notifications disabled',
+    openSettingsToEnable: 'Enable in Settings',
+    tapToReceiveAlerts: 'Tap to receive alerts',
+    active: 'Active',
+    backendWarning: 'Price alerts require an active server connection.',
+    backendNoConfig: 'No backend configured – push notifications are not available.',
+    targetPricePlaceholder: 'e.g. 1.50',
+    notificationsDisabledBody: 'Open Settings and enable notifications for FuelRadar.',
+    stationOptionalLabel: 'Station (optional)',
+
+    // Notifications
+    androidChannelPriceAlertsDesc: 'Notifications when fuel prices drop',
   },
 };
 

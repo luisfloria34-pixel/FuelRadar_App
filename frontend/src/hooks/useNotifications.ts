@@ -34,15 +34,19 @@ export async function requestNotificationPermissions(): Promise<PermissionStatus
 
 async function setupAndroidChannel() {
   if (Platform.OS !== 'android') return;
+  const { t } = useStore.getState();
   await Notifications.setNotificationChannelAsync('price-alerts', {
-    name: 'Preisalarme',
-    description: 'Benachrichtigungen wenn Kraftstoffpreise fallen',
+    name: t('priceAlerts'),
+    description: t('androidChannelPriceAlertsDesc'),
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#32D74B',
     sound: 'default',
   });
 }
+
+// Modern Expo Go detection: appOwnership === 'expo' means running in Expo Go
+const isExpoGo = Constants.appOwnership === 'expo';
 
 const SKIP_MSG =
   '[Notifications] Push token registration skipped: EXPO_PUBLIC_API_URL missing or unsupported environment';
@@ -54,7 +58,6 @@ export async function registerForPushNotifications(
   if (Platform.OS === 'web') return null;
 
   const API_URL = process.env.EXPO_PUBLIC_API_URL;
-  const isExpoGo = Constants.appOwnership === 'expo';
 
   // Expo Go on Android SDK 53+ cannot get remote push tokens
   if (isExpoGo && Platform.OS === 'android') {
@@ -117,11 +120,15 @@ export function useNotifications() {
 
     notificationListener.current = Notifications.addNotificationReceivedListener(() => {});
 
+    // Called when user taps a notification — deep-link to relevant screen
     responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
       const data = response.notification.request.content.data as Record<string, any>;
-      const navigableTypes = ['price_alert', 'station_change', 'cheaper_nearby'];
-      if (navigableTypes.includes(data?.type)) {
+      if (data?.type === 'price_alert' || data?.type === 'station_change') {
         router.push('/(tabs)/alerts');
+      } else if (data?.type === 'cheaper_nearby' || data?.type === 'weekly_report') {
+        router.push('/(tabs)/map');
+      } else if (data?.type === 'favorite_price_change' && data?.station_id) {
+        router.push(`/station/${data.station_id}`);
       }
     });
 

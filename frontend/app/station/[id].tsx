@@ -250,7 +250,7 @@ export default function StationDetailScreen() {
   };
 
   const formatPrice = (price: number | null) => {
-    if (!price) return null;
+    if (price === null || price === undefined) return null;
     const [euros, cents] = price.toFixed(3).split('.');
     return { euros, mainCents: cents.slice(0, 2), lastDigit: cents.slice(2) };
   };

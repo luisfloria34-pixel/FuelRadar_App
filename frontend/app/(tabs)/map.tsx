@@ -24,11 +24,7 @@ import MapRenderer from '../../src/components/MapRenderer';
 import { LocationPermissionModal } from '../../src/components/LocationPermissionModal';
 
 const RADIUS_OPTIONS = [2, 5, 10, 25];
-const FUEL_OPTIONS: { type: FuelType; label: string }[] = [
-  { type: 'diesel', label: 'Diesel' },
-  { type: 'e5', label: 'E5' },
-  { type: 'e10', label: 'E10' },
-];
+const FUEL_TYPES: FuelType[] = ['diesel', 'e5', 'e10'];
 const DEFAULT_CENTER = { lat: 52.520008, lng: 13.404954 };
 
 export default function MapScreen() {
@@ -41,7 +37,14 @@ export default function MapScreen() {
     isLoading, setIsLoading,
     searchRadius, setSearchRadius,
     isFavorite, addFavorite, removeFavorite,
+    t, language,
   } = useStore();
+
+  const fuelLabel = (type: FuelType) => {
+    if (type === 'diesel') return t('diesel');
+    if (type === 'e5') return t('superE5');
+    return t('superE10');
+  };
 
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,7 +77,7 @@ export default function MapScreen() {
     if (!supabaseUrl || !supabaseKey) {
       console.warn('[fetchStations] Supabase env vars missing — skipping fetch, showing empty state');
       setStations([]);
-      setFetchError('Tankstellen konnten nicht geladen werden. Bitte prüfe deine Verbindung oder versuche es später erneut.');
+      setFetchError(t('tryAdjustingFilters'));
       return;
     }
 
@@ -89,9 +92,9 @@ export default function MapScreen() {
         setStations([]);
       }
     } catch (error: any) {
-      console.warn('[fetchStations] request failed, showing fallback state:', error?.message || error);
+      console.warn('[Map] Fetch error:', error?.message || error);
       setStations([]);
-      setFetchError('Tankstellen konnten nicht geladen werden. Bitte prüfe deine Verbindung oder versuche es später erneut.');
+      setFetchError(t('noStationsFound'));
     } finally {
       isFetchingRef.current = false;
       setIsLoading(false);
@@ -239,7 +242,7 @@ export default function MapScreen() {
         fetchStations(r.lat, r.lng, searchRadius);
         flyTo(newCenter);
       }
-    } catch (e: any) { console.warn('[handleSearch] geocode failed:', e?.message || e); }
+    } catch (e: any) { console.warn('[Map] Search error:', e?.message || e); }
     finally { setIsSearching(false); }
   }, [searchQuery, searchRadius]);
 
@@ -317,7 +320,7 @@ export default function MapScreen() {
             <TextInput
               testID="map-search-input"
               style={styles.searchInput}
-              placeholder="PLZ oder Ort eingeben"
+              placeholder={t('searchPLZ')}
               placeholderTextColor={COLORS.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -346,8 +349,8 @@ export default function MapScreen() {
             <Ionicons name="location-outline" size={13} color="#F59E0B" />
             <Text style={styles.deniedText}>
               {locationPermanentlyDenied
-                ? 'Standort gesperrt · Einstellungen öffnen'
-                : 'Standort deaktiviert · Tippen zum Aktivieren'}
+                ? t('locationLocked')
+                : t('locationDisabled')}
             </Text>
           </TouchableOpacity>
         )}
@@ -365,9 +368,9 @@ export default function MapScreen() {
         {/* Fuel pills */}
         <View style={styles.pillRow}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.pillScroll}>
-            {FUEL_OPTIONS.map(({ type, label }) => (
+            {FUEL_TYPES.map((type) => (
               <TouchableOpacity key={type} testID={`map-fuel-${type}`} style={[styles.pill, selectedFuelType === type && styles.pillActive]} onPress={() => setSelectedFuelType(type)}>
-                <Text style={[styles.pillText, selectedFuelType === type && styles.pillTextActive]}>{label}</Text>
+                <Text style={[styles.pillText, selectedFuelType === type && styles.pillTextActive]}>{fuelLabel(type)}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -387,7 +390,7 @@ export default function MapScreen() {
         {isLoading && (
           <View style={styles.loadingBadge}>
             <ActivityIndicator size="small" color="#22C55E" />
-            <Text style={styles.loadingText}>Lade Tankstellen...</Text>
+            <Text style={styles.loadingText}>{t('loadingStations')}</Text>
           </View>
         )}
       </SafeAreaView>
@@ -410,12 +413,12 @@ export default function MapScreen() {
             <View style={styles.sheetMeta}>
               <View style={[styles.statusBadge, selectedStation.is_open ? styles.openBg : styles.closedBg]}>
                 <Text style={[styles.statusText, { color: selectedStation.is_open ? '#22C55E' : '#EF4444' }]}>
-                  {selectedStation.is_open ? 'Ge\u00F6ffnet' : 'Geschlossen'}
+                  {selectedStation.is_open ? t('open') : t('closed')}
                 </Text>
               </View>
               <View style={styles.distRow}>
                 <Ionicons name="location" size={14} color="#FF453A" />
-                <Text style={styles.distText}>{fmtDist(selectedStation.dist)} entfernt</Text>
+                <Text style={styles.distText}>{fmtDist(selectedStation.dist)} {t('away')}</Text>
               </View>
             </View>
           </View>
@@ -426,7 +429,7 @@ export default function MapScreen() {
               return (
                 <TouchableOpacity key={ft} testID={`sheet-price-${ft}`} style={[styles.priceCard, active && styles.priceCardActive]} onPress={() => setSelectedFuelType(ft)} activeOpacity={0.7}>
                   <Text style={[styles.priceLabel, active && styles.priceLabelActive]}>
-                    {ft === 'diesel' ? 'DIESEL' : ft === 'e5' ? 'SUPER E5' : 'SUPER E10'}
+                    {fuelLabel(ft).toUpperCase()}
                   </Text>
                   <Text style={[styles.priceValue, active && styles.priceValueActive]}>
                     {fmt(selectedStation[ft])}
@@ -439,11 +442,11 @@ export default function MapScreen() {
           <View style={styles.actions}>
             <TouchableOpacity testID="sheet-navigate-btn" style={styles.navBtn} onPress={() => handleNavigate(selectedStation)} activeOpacity={0.8}>
               <Ionicons name="navigate" size={18} color="#0A0A0B" />
-              <Text style={styles.navBtnText}>Navigation</Text>
+              <Text style={styles.navBtnText}>{t('navigation')}</Text>
             </TouchableOpacity>
             <TouchableOpacity testID="sheet-detail-btn" style={styles.detailBtn} onPress={() => router.push(`/station/${selectedStation.id}`)} activeOpacity={0.8}>
               <Ionicons name="information-circle-outline" size={18} color="#22C55E" />
-              <Text style={styles.detailBtnText}>Details</Text>
+              <Text style={styles.detailBtnText}>{t('details')}</Text>
             </TouchableOpacity>
             <TouchableOpacity testID="sheet-fav-btn" style={[styles.favBtn, isFavorite(selectedStation.id) && styles.favBtnActive]} onPress={() => handleFavoriteToggle(selectedStation)} activeOpacity={0.7}>
               <Ionicons name={isFavorite(selectedStation.id) ? 'heart' : 'heart-outline'} size={22} color={isFavorite(selectedStation.id) ? '#EF4444' : COLORS.textSecondary} />
@@ -466,7 +469,7 @@ export default function MapScreen() {
       {!selectedStation && openCount > 0 && !isLoading && (
         <View style={styles.countBadge}>
           <Ionicons name="location" size={14} color="#22C55E" />
-          <Text style={styles.countText}>{openCount} Tankstellen</Text>
+          <Text style={styles.countText}>{openCount} {t('stations')}</Text>
         </View>
       )}
     </View>

@@ -9,16 +9,18 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
+import { useStore } from '../store/useStore';
 
 interface Props {
   visible: boolean;
-  /** true = permission permanently denied, show "Open Settings" instead of "Erlauben" */
+  /** true = permission permanently denied, show "Open Settings" instead of "Allow" */
   permanentlyDenied?: boolean;
   onAllow: () => void;
   onDeny: () => void;
 }
 
 export function LocationPermissionModal({ visible, permanentlyDenied = false, onAllow, onDeny }: Props) {
+  const { t, language } = useStore();
   const [showWhy, setShowWhy] = useState(false);
 
   const handleAllow = () => {
@@ -42,13 +44,11 @@ export function LocationPermissionModal({ visible, permanentlyDenied = false, on
           </View>
 
           <Text style={styles.title}>
-            {permanentlyDenied ? 'Standort gesperrt' : 'Standort freigeben?'}
+            {permanentlyDenied ? t('locationBlockedTitle') : t('locationRequestTitle')}
           </Text>
 
           <Text style={styles.body}>
-            {permanentlyDenied
-              ? 'Der Standort wurde dauerhaft verweigert. Bitte aktiviere ihn in den Einstellungen unter FuelRadar → Standort.'
-              : 'FuelRadar zeigt dir Tankstellen in deiner Nähe und die günstigsten Preise auf der Karte.'}
+            {permanentlyDenied ? t('locationBlockedBody') : t('locationRequestBody')}
           </Text>
 
           {!permanentlyDenied && (
@@ -56,9 +56,8 @@ export function LocationPermissionModal({ visible, permanentlyDenied = false, on
               {showWhy && (
                 <View style={styles.whyBox}>
                   <Text style={styles.whyText}>
-                    <Text style={styles.whyBold}>Warum brauchen wir deinen Standort?{'\n'}</Text>
-                    Dein Standort wird nur auf deinem Gerät verwendet, um Tankstellen in der Nähe zu laden. Er wird nicht gespeichert, nicht geteilt und nicht an Dritte weitergegeben.{'\n\n'}
-                    Ohne Standort wird Berlin als Standardort verwendet.
+                    <Text style={styles.whyBold}>{t('locationWhyTitle')}{'\n'}</Text>
+                    {t('locationWhyDetail')}
                   </Text>
                 </View>
               )}
@@ -69,7 +68,7 @@ export function LocationPermissionModal({ visible, permanentlyDenied = false, on
                   color={COLORS.accent}
                 />
                 <Text style={styles.whyBtnText}>
-                  {showWhy ? 'Weniger anzeigen' : 'Warum wird der Standort benötigt?'}
+                  {showWhy ? t('locationShowLess') : t('locationWhyBtn')}
                 </Text>
               </TouchableOpacity>
             </>
@@ -77,14 +76,14 @@ export function LocationPermissionModal({ visible, permanentlyDenied = false, on
 
           <View style={styles.btnRow}>
             <TouchableOpacity style={styles.denyBtn} onPress={onDeny}>
-              <Text style={styles.denyText}>Nicht jetzt</Text>
+              <Text style={styles.denyText}>{t('locationNotNow')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.allowBtn, permanentlyDenied && styles.allowBtnSettings]}
               onPress={handleAllow}
             >
               <Text style={styles.allowText}>
-                {permanentlyDenied ? 'Einstellungen' : 'Erlauben'}
+                {permanentlyDenied ? t('settings') : t('locationAllow')}
               </Text>
             </TouchableOpacity>
           </View>

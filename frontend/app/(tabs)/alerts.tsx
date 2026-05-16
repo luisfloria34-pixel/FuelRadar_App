@@ -28,7 +28,7 @@ import {
 import { IS_BACKEND_CONFIGURED } from '../../src/services/api';
 
 export default function AlertsScreen() {
-  const { alerts, addAlert, removeAlert, toggleAlert, deviceId, language } = useStore();
+  const { alerts, addAlert, removeAlert, toggleAlert, deviceId, language, t } = useStore();
   const [modalVisible, setModalVisible] = useState(false);
   const [newAlert, setNewAlert] = useState({
     fuel_type: 'e10' as FuelType,
@@ -46,13 +46,12 @@ export default function AlertsScreen() {
 
   const handleEnableNotifications = async () => {
     if (permissionStatus === 'denied') {
-      // On iOS "denied" means permanently denied — must go to Settings
       Alert.alert(
-        'Benachrichtigungen deaktiviert',
-        'Öffne die Einstellungen und aktiviere Benachrichtigungen für FuelRadar.',
+        t('notificationsDisabled'),
+        t('notificationsDisabledBody'),
         [
-          { text: 'Abbrechen', style: 'cancel' },
-          { text: 'Einstellungen', onPress: () => Linking.openSettings() },
+          { text: t('cancel'), style: 'cancel' },
+          { text: t('settings'), onPress: () => Linking.openSettings() },
         ]
       );
       return;
@@ -67,7 +66,7 @@ export default function AlertsScreen() {
   const handleCreateAlert = async () => {
     const price = parseFloat(newAlert.threshold_price.replace(',', '.'));
     if (isNaN(price) || price <= 0) {
-      Alert.alert('Ungültiger Preis', 'Bitte gib einen gültigen Preis ein.');
+      Alert.alert(t('invalidPrice'), t('invalidPriceBody'));
       return;
     }
 
@@ -89,19 +88,19 @@ export default function AlertsScreen() {
 
   const handleDeleteAlert = (alertId: string) => {
     Alert.alert(
-      'Alarm löschen',
-      'Möchtest du diesen Preisalarm wirklich löschen?',
+      t('deleteAlert'),
+      t('deleteAlertConfirm'),
       [
-        { text: 'Abbrechen', style: 'cancel' },
-        { text: 'Löschen', style: 'destructive', onPress: () => removeAlert(alertId) },
+        { text: t('cancel'), style: 'cancel' },
+        { text: t('delete'), style: 'destructive', onPress: () => removeAlert(alertId) },
       ]
     );
   };
 
   const fuelLabels: Record<FuelType, string> = {
-    diesel: 'Diesel',
-    e5: 'Super E5',
-    e10: 'Super E10',
+    diesel: t('diesel'),
+    e5: t('superE5'),
+    e10: t('superE10'),
   };
 
   const fuelColors: Record<FuelType, string> = {
@@ -114,9 +113,9 @@ export default function AlertsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title} testID="alerts-title">Preisalarme</Text>
+          <Text style={styles.title} testID="alerts-title">{t('priceAlerts')}</Text>
           <Text style={styles.subtitle}>
-            {alerts.length > 0 ? `${alerts.length} aktive Alarme` : 'Werde benachrichtigt'}
+            {alerts.length > 0 ? `${alerts.length} ${t('activeAlertsCount')}` : t('getNotified')}
           </Text>
         </View>
         <TouchableOpacity
@@ -132,9 +131,7 @@ export default function AlertsScreen() {
       {!IS_BACKEND_CONFIGURED && (
         <View style={styles.backendWarning}>
           <Ionicons name="cloud-offline-outline" size={16} color={COLORS.accentAmber} />
-          <Text style={styles.backendWarningText}>
-            Preisalarme benötigen eine aktive Serververbindung.
-          </Text>
+          <Text style={styles.backendWarningText}>{t('backendWarning')}</Text>
         </View>
       )}
 
@@ -150,11 +147,11 @@ export default function AlertsScreen() {
               <Ionicons name="notifications-off-outline" size={20} color={COLORS.accentAmber} />
             </View>
             <View>
-              <Text style={styles.permissionTitle}>Benachrichtigungen deaktiviert</Text>
+              <Text style={styles.permissionTitle}>{t('notificationsDisabled')}</Text>
               <Text style={styles.permissionSubtitle}>
                 {permissionStatus === 'denied'
-                  ? 'In den Einstellungen aktivieren'
-                  : 'Tippe um Alarme zu erhalten'}
+                  ? t('openSettingsToEnable')
+                  : t('tapToReceiveAlerts')}
               </Text>
             </View>
           </View>
@@ -172,17 +169,15 @@ export default function AlertsScreen() {
             <View style={styles.emptyIcon}>
               <Ionicons name="notifications-outline" size={44} color={COLORS.textMuted} />
             </View>
-            <Text style={styles.emptyTitle}>Noch keine Alarme</Text>
-            <Text style={styles.emptySubtitle}>
-              Erstelle Preisalarme und werde benachrichtigt, sobald Kraftstoffpreise unter deinen Zielpreis fallen.
-            </Text>
+            <Text style={styles.emptyTitle}>{t('noAlertsYet')}</Text>
+            <Text style={styles.emptySubtitle}>{t('createAlertsDescription')}</Text>
             <TouchableOpacity
               testID="create-first-alert-btn"
               style={styles.emptyButton}
               onPress={() => setModalVisible(true)}
             >
               <Ionicons name="add" size={20} color={COLORS.background} />
-              <Text style={styles.emptyButtonText}>Alarm erstellen</Text>
+              <Text style={styles.emptyButtonText}>{t('createAlert')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -204,7 +199,7 @@ export default function AlertsScreen() {
               </View>
 
               <View style={styles.alertContent}>
-                <Text style={styles.priceLabel}>Alarm wenn unter</Text>
+                <Text style={styles.priceLabel}>{t('alertWhenBelow')}</Text>
                 <Text style={styles.priceValue}>
                   {alert.threshold_price.toFixed(2).replace('.', ',')} €
                 </Text>
@@ -220,7 +215,7 @@ export default function AlertsScreen() {
               {alert.is_active && permissionStatus === 'granted' && (
                 <View style={styles.activeIndicator}>
                   <Ionicons name="notifications" size={12} color={COLORS.accentGreen} />
-                  <Text style={styles.activeIndicatorText}>Aktiv</Text>
+                  <Text style={styles.activeIndicatorText}>{t('active')}</Text>
                 </View>
               )}
 
@@ -252,7 +247,7 @@ export default function AlertsScreen() {
             <View style={styles.modalHandle} />
 
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Neuer Preisalarm</Text>
+              <Text style={styles.modalTitle}>{t('newPriceAlert')}</Text>
               <TouchableOpacity
                 testID="close-alert-modal"
                 onPress={() => setModalVisible(false)}
@@ -265,13 +260,11 @@ export default function AlertsScreen() {
             {!IS_BACKEND_CONFIGURED && (
               <View style={styles.modalBackendNote}>
                 <Ionicons name="information-circle-outline" size={14} color={COLORS.accentAmber} />
-                <Text style={styles.modalBackendNoteText}>
-                  Kein Backend konfiguriert – Push-Benachrichtigungen sind nicht verfügbar.
-                </Text>
+                <Text style={styles.modalBackendNoteText}>{t('backendNoConfig')}</Text>
               </View>
             )}
 
-            <Text style={styles.inputLabel}>Kraftstoffart</Text>
+            <Text style={styles.inputLabel}>{t('fuelType')}</Text>
             <View style={styles.fuelOptions}>
               {(['diesel', 'e5', 'e10'] as FuelType[]).map((type) => (
                 <TouchableOpacity
@@ -298,24 +291,24 @@ export default function AlertsScreen() {
               ))}
             </View>
 
-            <Text style={styles.inputLabel}>Zielpreis (€)</Text>
+            <Text style={styles.inputLabel}>{t('targetPriceEur')}</Text>
             <TextInput
               testID="alert-price-input"
               style={styles.input}
               value={newAlert.threshold_price}
               onChangeText={(text) => setNewAlert({ ...newAlert, threshold_price: text })}
-              placeholder="z.B. 1,50"
+              placeholder={t('targetPricePlaceholder')}
               placeholderTextColor={COLORS.textMuted}
               keyboardType="decimal-pad"
             />
 
-            <Text style={styles.inputLabel}>Tankstelle (optional)</Text>
+            <Text style={styles.inputLabel}>{t('stationOptionalLabel')}</Text>
             <TextInput
               testID="alert-station-input"
               style={styles.input}
               value={newAlert.station_name}
               onChangeText={(text) => setNewAlert({ ...newAlert, station_name: text })}
-              placeholder="Jede Tankstelle"
+              placeholder={t('anyStationPlaceholder')}
               placeholderTextColor={COLORS.textMuted}
             />
 
@@ -326,7 +319,7 @@ export default function AlertsScreen() {
               activeOpacity={0.8}
             >
               <Ionicons name="notifications" size={20} color={COLORS.background} />
-              <Text style={styles.createButtonText}>Alarm erstellen</Text>
+              <Text style={styles.createButtonText}>{t('createAlert')}</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>

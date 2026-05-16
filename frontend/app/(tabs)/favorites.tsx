@@ -32,7 +32,7 @@ export default function FavoritesScreen() {
           setPrices(response.prices);
         }
       } catch (error) {
-        console.error('Error fetching prices:', error);
+        console.warn('[Favorites] Error fetching prices:', error instanceof Error ? error.message : error);
       } finally {
         setLoading(false);
       }
@@ -56,7 +56,7 @@ export default function FavoritesScreen() {
   };
 
   const formatPrice = (price: number | null | undefined) => {
-    if (!price) return '—';
+    if (price === null || price === undefined) return '—';
     return price.toFixed(2).replace('.', ',') + ' €';
   };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -41,14 +41,16 @@ export default function HomeScreen() {
     initializeApp,
     searchRadius,
     searchLocationName,
+    t,
+    language,
   } = useStore();
 
-  const greeting = useMemo(() => {
-    const h = new Date().getHours();
-    if (h >= 5 && h < 12) return 'Guten Morgen \u26FD';
-    if (h >= 12 && h < 18) return 'Bereit zum Tanken? \u26FD';
-    return 'Jetzt g\u00FCnstig tanken \u26FD';
-  }, []);
+  const h = new Date().getHours();
+  const greeting = h >= 5 && h < 12
+    ? `${t('goodMorning')} \u26FD`
+    : h < 18
+      ? `${t('goodAfternoon')} \u26FD`
+      : `${t('goodEvening')} \u26FD`;
 
   const [refreshing, setRefreshing] = useState(false);
   const [cheapestStation, setCheapestStation] = useState<Station | null>(null);
@@ -264,7 +266,7 @@ export default function HomeScreen() {
       {locationDenied && (
         <TouchableOpacity style={styles.deniedBanner} onPress={() => Linking.openSettings()}>
           <Ionicons name="location-outline" size={14} color="#F59E0B" />
-          <Text style={styles.deniedText}>Standort deaktiviert · PLZ suchen oder aktivieren</Text>
+          <Text style={styles.deniedText}>{t('locationDeniedBannerText')}</Text>
           <TouchableOpacity onPress={() => { setLocationDenied(false); fetchStations(); }}>
             <Ionicons name="refresh" size={14} color="#F59E0B" />
           </TouchableOpacity>
@@ -297,8 +299,8 @@ export default function HomeScreen() {
           </View>
           <Text style={styles.title}>
             {searchLocationName
-              ? `Tankstellen in\n${searchLocationName}`
-              : 'Finde die günstigsten Spritpreise\nin deiner Nähe'}
+              ? `${t('stationsIn')}\n${searchLocationName}`
+              : t('homeTagline')}
           </Text>
         </View>
 
@@ -331,16 +333,16 @@ export default function HomeScreen() {
         {/* Nearby Stations */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Günstigste in deiner Nähe</Text>
+            <Text style={styles.sectionTitle}>{t('cheapestNearYou')}</Text>
             <TouchableOpacity onPress={() => router.push('/(tabs)/map')}>
-              <Text style={styles.seeAllText}>Alle</Text>
+              <Text style={styles.seeAllText}>{t('seeAll')}</Text>
             </TouchableOpacity>
           </View>
 
           {isLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={COLORS.accent} />
-              <Text style={styles.loadingText}>Suche Tankstellen...</Text>
+              <Text style={styles.loadingText}>{t('searchingStations')}</Text>
             </View>
           ) : (
             nearbyStations.map((station) => (
@@ -357,10 +359,7 @@ export default function HomeScreen() {
 
         {/* Legal Footer */}
         <View style={styles.legalFooter}>
-          <Text style={styles.legalText}>
-            Daten: Tankerkönig / MTS-K (CC BY 4.0){'\n'}
-            Preise können sich ändern. Keine Gewähr.
-          </Text>
+          <Text style={styles.legalText}>{t('legalDisclaimer')}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

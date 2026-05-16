@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../src/constants/theme';
 import { useStore } from '../src/store/useStore';
 import { FuelType } from '../src/types';
@@ -31,7 +32,8 @@ export default function SettingsScreen() {
     { type: 'e10', label: t('superE10'), color: COLORS.e10 },
   ];
 
-  const radiusOptions = [5, 10, 15, 25];
+  const radiusOptions = [2, 5, 10, 25];
+  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
   const handleResetOnboarding = async () => {
     await setHasSeenOnboarding(false);
@@ -204,7 +206,7 @@ export default function SettingsScreen() {
             <SettingRow
               icon="information-circle"
               title={t('version')}
-              subtitle="1.0.0"
+              subtitle={appVersion}
             />
             <SettingRow
               icon="refresh"
@@ -223,7 +225,7 @@ export default function SettingsScreen() {
           </View>
           <Text style={styles.appName}>{t('appName')}</Text>
           <Text style={styles.tagline}>{t('tagline')}</Text>
-          <Text style={styles.copyright}>© 2026 FuelRadar</Text>
+          <Text style={styles.copyright}>© {new Date().getFullYear()} FuelRadar</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -14,7 +14,7 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "FuelRadar benötigt deinen Standort, um Tankstellen in deiner Nähe zu finden und die günstigsten Preise anzuzeigen.",
         "NSLocationAlwaysUsageDescription": "FuelRadar benötigt deinen Standort im Hintergrund, um dich zu benachrichtigen, wenn Preise in deiner Nähe fallen.",
-        "NSUserNotificationsUsageDescription": "FuelRadar sends you a notification when fuel prices drop below your set threshold.",
+        "NSUserNotificationsUsageDescription": "FuelRadar benachrichtigt dich, wenn Kraftstoffpreise unter deinen Zielpreis fallen.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "entitlements": {
@@ -31,12 +31,10 @@
       "package": "com.luishustler.fuelradar",
       "googleServicesFile": "./google-services.json",
       "permissions": [
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE",
+        "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE"
       ]
     },
     "web": {
