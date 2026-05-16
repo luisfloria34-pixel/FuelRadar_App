@@ -53,6 +53,7 @@ export default function MapScreen() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const sheetAnim = useRef(new Animated.Value(0)).current;
   const mapRef = useRef<any>(null);
+  const isFetchingRef = useRef(false);
   // Use refs for searchRadius / location inside async callbacks to avoid stale closures
   const searchRadiusRef = useRef(searchRadius);
   const locationRef = useRef(location);
@@ -66,16 +67,18 @@ export default function MapScreen() {
   }, [stations, selectedFuelType]);
 
   const fetchStations = useCallback(async (lat: number, lng: number, rad: number) => {
+    if (isFetchingRef.current) return;
+
     const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseKey) {
       console.warn('[fetchStations] Supabase env vars missing — skipping fetch, showing empty state');
       setStations([]);
       setFetchError('Tankstellen konnten nicht geladen werden. Bitte prüfe deine Verbindung oder versuche es später erneut.');
-      setIsLoading(false);
       return;
     }
 
+    isFetchingRef.current = true;
     setIsLoading(true);
     setFetchError(null);
     try {
@@ -90,12 +93,14 @@ export default function MapScreen() {
       setStations([]);
       setFetchError('Tankstellen konnten nicht geladen werden. Bitte prüfe deine Verbindung oder versuche es später erneut.');
     } finally {
+      isFetchingRef.current = false;
       setIsLoading(false);
     }
   }, []);
 
   const handleRetry = useCallback(() => {
     setFetchError(null);
+    isFetchingRef.current = false;
     fetchStations(mapCenter.lat, mapCenter.lng, searchRadiusRef.current);
   }, [fetchStations, mapCenter]);
 
@@ -118,6 +123,7 @@ export default function MapScreen() {
         const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setMapCenter(c);
         setLocation({ latitude: c.lat, longitude: c.lng });
+        isFetchingRef.current = false; // allow GPS fetch to replace cached fetch
         fetchStations(c.lat, c.lng, rad);
         setLocationDenied(false);
         // Animate map to real GPS position
@@ -210,6 +216,7 @@ export default function MapScreen() {
       setMapCenter(c);
       setLocation({ latitude: c.lat, longitude: c.lng });
       flyTo(c, 14);
+      isFetchingRef.current = false;
       fetchStations(c.lat, c.lng, searchRadiusRef.current);
       setLocationDenied(false);
     } catch (e) {
@@ -239,6 +246,7 @@ export default function MapScreen() {
   const handleRadiusChange = (r: number) => {
     setSearchRadius(r);
     setSelectedStation(null);
+    isFetchingRef.current = false;
     fetchStations(mapCenter.lat, mapCenter.lng, r);
   };
 
