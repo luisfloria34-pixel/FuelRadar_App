@@ -11,11 +11,20 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../src/constants/theme';
 import { useStore } from '../src/store/useStore';
 import { useTranslation } from '../src/hooks/useTranslation';
 import { FuelType } from '../src/types';
 import { Language } from '../src/constants/translations';
+
+// All AsyncStorage keys to wipe on onboarding reset
+const ONBOARDING_KEYS = [
+  '@fuelradar_onboarding',
+  '@fuelradar_vehicle_type',
+  '@fuelradar_fuel_preference',
+  '@fuelradar_referral_source',
+];
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -44,8 +53,14 @@ export default function SettingsScreen() {
         { text: t('cancel'), style: 'cancel' },
         {
           text: t('confirm'),
+          style: 'destructive',
           onPress: async () => {
+            // 1. Clear ALL onboarding-related AsyncStorage keys
+            await Promise.all(ONBOARDING_KEYS.map((k) => AsyncStorage.removeItem(k)));
+            // 2. Reset Zustand store state so next boot reads false
             await setHasSeenOnboarding(false);
+            console.log('[Settings] Onboarding reset — cleared keys:', ONBOARDING_KEYS);
+            // 3. Navigate immediately to onboarding (replaces current screen)
             router.replace('/onboarding');
           },
         },
