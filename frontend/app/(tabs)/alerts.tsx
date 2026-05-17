@@ -16,10 +16,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
+import * as Haptics from 'expo-haptics';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 import { useTranslation } from '../../src/hooks/useTranslation';
 import { Alert as AlertType, FuelType } from '../../src/types';
+import { Toast } from '../../src/components/Toast';
 import {
   getNotificationPermissionStatus,
   requestNotificationPermissions,
@@ -39,6 +42,8 @@ export default function AlertsScreen() {
     station_name: '',
   });
   const [permissionStatus, setPermissionStatus] = useState<PermissionStatus>('undetermined');
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   // Re-check permission every time the screen comes into focus
   useFocusEffect(
@@ -83,13 +88,40 @@ export default function AlertsScreen() {
     setModalVisible(false);
     setNewAlert({ fuel_type: 'e10', threshold_price: '', station_name: '' });
 
+    // Haptic success feedback
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    // Success toast
+    setToastMessage(t('alertCreated'));
+    setToastVisible(true);
+
+    // Demo local notification for testing price alert UX
+    setTimeout(async () => {
+      try {
+        const { status } = await Notifications.getPermissionsAsync();
+        if (status === 'granted') {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: t('demoNotifTitle'),
+              body: t('demoNotifBody'),
+              data: { type: 'price_alert', demo: true },
+            },
+            trigger: null,
+          });
+        }
+      } catch (err) {
+        console.warn('[Alerts] Demo notification skipped:', err);
+      }
+    }, 4000);
+
     // Prompt for notification permission if not yet granted
     if (permissionStatus !== 'granted') {
       setTimeout(() => handleEnableNotifications(), 400);
     }
   };
 
-  const handleDeleteAlert = (alertId: string) => {
+  const handleDeleteAlert = async (alertId: string) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       t('deleteAlert'),
       t('deleteAlertConfirm'),
@@ -99,6 +131,7 @@ export default function AlertsScreen() {
       ]
     );
   };
+
 
   const fuelLabels: Record<FuelType, string> = {
     diesel: t('diesel'),
@@ -329,6 +362,12 @@ export default function AlertsScreen() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+      <Toast
+        message={toastMessage}
+        visible={toastVisible}
+        onHide={() => setToastVisible(false)}
+        bottomOffset={130}
+      />
     </SafeAreaView>
   );
 }

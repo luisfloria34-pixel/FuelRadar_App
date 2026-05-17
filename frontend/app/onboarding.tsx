@@ -13,6 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import * as Haptics from 'expo-haptics';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../src/constants/theme';
 import { useStore } from '../src/store/useStore';
@@ -20,7 +21,9 @@ import { useTranslation } from '../src/hooks/useTranslation';
 import { VehicleType, FuelPreference, ReferralSource } from '../src/types';
 
 const { width } = Dimensions.get('window');
-const TOTAL_STEPS = 6; // 0=welcome 1=vehicle 2=fuel 3=referral 4=location 5=ready
+
+// Steps: 0=welcome 1-3=feature slides 4=vehicle 5=fuel 6=referral 7=location 8=ready
+const TOTAL_STEPS = 9;
 const CARD_W = (width - SPACING.lg * 2 - SPACING.md) / 2;
 
 const getGPS = (ms: number): Promise<Location.LocationObject | null> =>
@@ -28,6 +31,12 @@ const getGPS = (ms: number): Promise<Location.LocationObject | null> =>
     Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
     new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
   ]);
+
+const featureSlides = [
+  { icon: 'pricetag' as const,     accentKey: 'accentGreen'  as const, titleKey: 'onboarding1Title', descKey: 'onboarding1Desc' },
+  { icon: 'map' as const,           accentKey: 'accentBlue'   as const, titleKey: 'onboarding2Title', descKey: 'onboarding2Desc' },
+  { icon: 'notifications' as const, accentKey: 'accentOrange' as const, titleKey: 'onboarding3Title', descKey: 'onboarding3Desc' },
+] as const;
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -52,22 +61,22 @@ export default function OnboardingScreen() {
   // ─── Option lists ─────────────────────────────────────────────────────────────
 
   const vehicleOptions: { type: VehicleType; icon: string; label: string; disabled?: boolean }[] = [
-    { type: 'small_car',   icon: 'car-hatchback', label: t('vehicleSmallCar') },
-    { type: 'sedan',       icon: 'car-limousine', label: t('vehicleSedan') },
-    { type: 'suv',         icon: 'car-estate',    label: t('vehicleSuv') },
-    { type: 'van',         icon: 'van-utility',   label: t('vehicleVan') },
-    { type: 'motorcycle',  icon: 'motorbike',     label: t('vehicleMotorcycle') },
-    { type: 'electric',    icon: 'car-electric',  label: t('vehicleElectric'), disabled: true },
+    { type: 'small_car',  icon: 'car-hatchback', label: t('vehicleSmallCar') },
+    { type: 'sedan',      icon: 'car-limousine', label: t('vehicleSedan') },
+    { type: 'suv',        icon: 'car-estate',    label: t('vehicleSuv') },
+    { type: 'van',        icon: 'van-utility',   label: t('vehicleVan') },
+    { type: 'motorcycle', icon: 'motorbike',     label: t('vehicleMotorcycle') },
+    { type: 'electric',   icon: 'car-electric',  label: t('vehicleElectric'), disabled: true },
   ];
 
   const fuelOptions: { type: FuelPreference; label: string; color: string; disabled?: boolean }[] = [
-    { type: 'diesel',         label: t('diesel'),           color: COLORS.diesel },
-    { type: 'e5',             label: t('superE5'),          color: COLORS.e5 },
-    { type: 'e10',            label: t('superE10'),         color: COLORS.e10 },
+    { type: 'diesel',         label: t('diesel'),            color: COLORS.diesel },
+    { type: 'e5',             label: t('superE5'),           color: COLORS.e5 },
+    { type: 'e10',            label: t('superE10'),          color: COLORS.e10 },
     { type: 'premium_diesel', label: t('fuelPremiumDiesel'), color: '#94A3B8', disabled: true },
-    { type: 'super_plus',     label: t('fuelSuperPlus'),    color: '#F59E0B', disabled: true },
-    { type: 'lpg',            label: t('fuelLpg'),          color: '#F97316', disabled: true },
-    { type: 'cng',            label: t('fuelCng'),          color: '#22D3EE', disabled: true },
+    { type: 'super_plus',     label: t('fuelSuperPlus'),     color: '#F59E0B', disabled: true },
+    { type: 'lpg',            label: t('fuelLpg'),           color: '#F97316', disabled: true },
+    { type: 'cng',            label: t('fuelCng'),           color: '#22D3EE', disabled: true },
   ];
 
   const referralOptions: { type: ReferralSource; icon: string; label: string }[] = [
@@ -79,39 +88,51 @@ export default function OnboardingScreen() {
     { type: 'other',     icon: '✨', label: t('referralOther') },
   ];
 
-  // ─── Navigation helpers ───────────────────────────────────────────────────────
+  // ─── Step meta ────────────────────────────────────────────────────────────────
+
+  const isLocationStep    = step === 7;
+  const isReadyStep       = step === 8;
+  const isWelcomeStep     = step === 0;
+  const isFeatureStep     = step >= 1 && step <= 3;
+  const showSkipStep      = step >= 4 && step <= 6;
+  const shouldCenter      = step <= 3 || step === 7 || step === 8;
+
+  // ─── Navigation ───────────────────────────────────────────────────────────────
 
   const canContinue = () => {
-    if (step === 1) return selectedVehicle !== null;
-    if (step === 2) return selectedFuel !== null;
-    if (step === 4) return false; // location uses its own buttons
-    return true; // steps 0, 3, 5
+    if (step === 4) return selectedVehicle !== null;
+    if (step === 5) return selectedFuel !== null;
+    if (step === 7) return false; // location uses its own buttons
+    return true;
   };
 
   const finishOnboarding = async () => {
-    if (selectedVehicle) await setVehicleType(selectedVehicle);
-    if (selectedFuel) await setFuelPreference(selectedFuel);
+    if (selectedVehicle)  await setVehicleType(selectedVehicle);
+    if (selectedFuel)     await setFuelPreference(selectedFuel);
     if (selectedReferral) await setReferralSource(selectedReferral);
     await setHasSeenOnboarding(true);
     console.log('[Onboarding] completed — navigating to app');
+    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.replace('/(tabs)');
   };
 
   const handleNext = async () => {
     if (step < TOTAL_STEPS - 1) {
       console.log('[Onboarding] advancing to step', step + 1);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setStep(s => s + 1);
     } else {
       await finishOnboarding();
     }
   };
 
-  const handleSkipStep = () => {
+  const handleSkipStep = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (step < TOTAL_STEPS - 1) {
       console.log('[Onboarding] skipping step', step);
       setStep(s => s + 1);
     } else {
-      finishOnboarding();
+      await finishOnboarding();
     }
   };
 
@@ -144,40 +165,15 @@ export default function OnboardingScreen() {
       console.log('[Onboarding] saved location permission: denied (error)');
     } finally {
       setLocationLoading(false);
-      setStep(5);
+      setStep(8);
     }
   };
 
   const handleLocationDeny = async () => {
     await setLocationPermissionStatus('denied');
     console.log('[Onboarding] saved location permission: denied (user skipped)');
-    setStep(5);
+    setStep(8);
   };
-
-  // ─── Step meta ────────────────────────────────────────────────────────────────
-
-  const stepTitles = [
-    'FuelRadar',
-    t('onboardingVehicleTitle'),
-    t('onboardingFuelTitle'),
-    t('onboardingReferralTitle'),
-    t('onboardingLocationTitle'),
-    t('onboardingReadyTitle'),
-  ];
-
-  const stepSubtitles = [
-    'Live Kraftstoffpreise in Deutschland',
-    t('onboardingVehicleSubtitle'),
-    t('onboardingFuelSubtitle'),
-    t('onboardingReferralSubtitle'),
-    t('onboardingLocationSubtitle'),
-    t('onboardingReadySubtitle'),
-  ];
-
-  const isLocationStep = step === 4;
-  const isReadyStep = step === 5;
-  const isWelcomeStep = step === 0;
-  const showSkipStep = step >= 1 && step <= 3;
 
   // ─── Render ───────────────────────────────────────────────────────────────────
 
@@ -186,32 +182,32 @@ export default function OnboardingScreen() {
       <StatusBar barStyle="light-content" />
 
       <SafeAreaView style={styles.safe} edges={['top']}>
-        {/* ── Progress bar ─────────────────────────────────────────── */}
+
+        {/* ── Progress bar (9 segments) ──────────────────────────── */}
         <View style={styles.progressBar}>
           {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
             <View key={i} style={[styles.progressSeg, i <= step && styles.progressSegActive]} />
           ))}
         </View>
 
-        {/* ── Skip all ─────────────────────────────────────────────── */}
+        {/* ── Skip all (hidden on ready step) ───────────────────── */}
         {!isReadyStep && (
           <TouchableOpacity style={styles.skipAllBtn} onPress={handleSkipAll}>
             <Text style={styles.skipAllText}>{t('skip')}</Text>
           </TouchableOpacity>
         )}
 
-        {/* ── Step content ─────────────────────────────────────────── */}
+        {/* ── Scroll content ────────────────────────────────────── */}
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, (isWelcomeStep || isReadyStep) && styles.scrollContentCentered]}
+          contentContainerStyle={[styles.scrollContent, shouldCenter && styles.scrollContentCentered]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
 
-          {/* Step 0 — Welcome ──────────────────────────────────────── */}
-          {step === 0 && (
+          {/* Step 0 — Welcome ──────────────────────────────────── */}
+          {isWelcomeStep && (
             <View style={styles.welcomeWrap}>
-              {/* Outer view carries the glow shadow; inner clips to rounded square */}
               <View style={styles.logoShadow}>
                 <View style={styles.logoClip}>
                   <Image
@@ -226,24 +222,45 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {/* Steps 1–3: header shown above content ────────────────── */}
-          {step >= 1 && step <= 3 && (
+          {/* Steps 1–3 — Feature slides ────────────────────────── */}
+          {isFeatureStep && (() => {
+            const slide = featureSlides[step - 1];
+            const color = COLORS[slide.accentKey];
+            return (
+              <View style={styles.featureWrap}>
+                <View style={[styles.featureIconWrap, { backgroundColor: color + '18', shadowColor: color }]}>
+                  <Ionicons name={slide.icon} size={54} color={color} />
+                </View>
+                <Text style={styles.featureTitle}>{t(slide.titleKey as any)}</Text>
+                <Text style={styles.featureDesc}>{t(slide.descKey as any)}</Text>
+              </View>
+            );
+          })()}
+
+          {/* Steps 4–6: section header ─────────────────────────── */}
+          {step >= 4 && step <= 6 && (
             <View style={styles.header}>
-              <Text style={styles.stepTitle}>{stepTitles[step]}</Text>
-              <Text style={styles.stepSubtitle}>{stepSubtitles[step]}</Text>
+              <Text style={styles.stepTitle}>
+                {step === 4 ? t('onboardingVehicleTitle')
+                  : step === 5 ? t('onboardingFuelTitle')
+                  : t('onboardingReferralTitle')}
+              </Text>
+              <Text style={styles.stepSubtitle}>
+                {step === 4 ? t('onboardingVehicleSubtitle')
+                  : step === 5 ? t('onboardingFuelSubtitle')
+                  : t('onboardingReferralSubtitle')}
+              </Text>
             </View>
           )}
 
-          {/* Step 1 — Vehicle ──────────────────────────────────────── */}
-          {step === 1 && (
+          {/* Step 4 — Vehicle ──────────────────────────────────── */}
+          {step === 4 && (
             <View style={styles.grid}>
               {vehicleOptions.map((opt) => {
                 const isSelected = selectedVehicle === opt.type;
                 const iconColor = isSelected
                   ? COLORS.accentGreen
-                  : opt.disabled
-                  ? COLORS.textMuted
-                  : COLORS.textSecondary;
+                  : opt.disabled ? COLORS.textMuted : COLORS.textSecondary;
                 return (
                   <TouchableOpacity
                     key={opt.type}
@@ -252,11 +269,12 @@ export default function OnboardingScreen() {
                       isSelected && styles.gridCardSelected,
                       opt.disabled && styles.gridCardDisabled,
                     ]}
-                    onPress={() => {
+                    onPress={async () => {
                       if (opt.disabled) return;
                       setSelectedVehicle(opt.type);
                       setVehicleType(opt.type);
                       console.log('[Onboarding] saved vehicle:', opt.type);
+                      await Haptics.selectionAsync();
                     }}
                     activeOpacity={opt.disabled ? 1 : 0.7}
                   >
@@ -285,8 +303,8 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {/* Step 2 — Fuel ─────────────────────────────────────────── */}
-          {step === 2 && (
+          {/* Step 5 — Fuel ─────────────────────────────────────── */}
+          {step === 5 && (
             <View style={styles.listCol}>
               {fuelOptions.map((opt) => {
                 const isSelected = selectedFuel === opt.type;
@@ -299,11 +317,12 @@ export default function OnboardingScreen() {
                       isSelected && { borderColor: opt.color, backgroundColor: opt.color + '12' },
                       isDisabled && styles.listItemDisabled,
                     ]}
-                    onPress={() => {
+                    onPress={async () => {
                       if (isDisabled) return;
                       setSelectedFuel(opt.type);
                       setFuelPreference(opt.type);
                       console.log('[Onboarding] saved fuel:', opt.type);
+                      await Haptics.selectionAsync();
                     }}
                     activeOpacity={isDisabled ? 1 : 0.7}
                   >
@@ -325,7 +344,7 @@ export default function OnboardingScreen() {
                   </TouchableOpacity>
                 );
               })}
-              {/* EV / Electric — coming soon */}
+              {/* EV — coming soon (not a selectable FuelPreference) */}
               <View style={[styles.listItem, styles.listItemDisabled]}>
                 <View style={[styles.fuelDot, { backgroundColor: COLORS.textMuted }]} />
                 <Text style={[styles.listItemLabel, styles.listItemLabelDisabled]}>
@@ -338,8 +357,8 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {/* Step 3 — Referral ─────────────────────────────────────── */}
-          {step === 3 && (
+          {/* Step 6 — Referral ─────────────────────────────────── */}
+          {step === 6 && (
             <View style={styles.grid}>
               {referralOptions.map((opt) => {
                 const isSelected = selectedReferral === opt.type;
@@ -347,10 +366,11 @@ export default function OnboardingScreen() {
                   <TouchableOpacity
                     key={opt.type}
                     style={[styles.gridCard, isSelected && styles.gridCardSelected]}
-                    onPress={() => {
+                    onPress={async () => {
                       setSelectedReferral(opt.type);
                       setReferralSource(opt.type);
                       console.log('[Onboarding] saved referral:', opt.type);
+                      await Haptics.selectionAsync();
                     }}
                     activeOpacity={0.7}
                   >
@@ -369,37 +389,39 @@ export default function OnboardingScreen() {
             </View>
           )}
 
-          {/* Step 4 — Location ─────────────────────────────────────── */}
-          {step === 4 && (
+          {/* Step 7 — Location ─────────────────────────────────── */}
+          {step === 7 && (
             <View style={styles.locationWrap}>
               <View style={styles.locationIconWrap}>
                 <Ionicons name="location" size={44} color={COLORS.accentGreen} />
               </View>
-              <Text style={styles.stepTitle}>{stepTitles[4]}</Text>
-              <Text style={[styles.stepSubtitle, styles.locationSubtitle]}>{stepSubtitles[4]}</Text>
+              <Text style={styles.stepTitle}>{t('onboardingLocationTitle')}</Text>
+              <Text style={[styles.stepSubtitle, styles.locationSubtitle]}>
+                {t('onboardingLocationSubtitle')}
+              </Text>
               <Text style={styles.locationBody}>
                 FuelRadar zeigt dir Tankstellen in deiner Nähe und die günstigsten Preise auf der Karte.
               </Text>
             </View>
           )}
 
-          {/* Step 5 — Ready ────────────────────────────────────────── */}
-          {step === 5 && (
+          {/* Step 8 — Ready ────────────────────────────────────── */}
+          {step === 8 && (
             <View style={styles.readyWrap}>
               <View style={styles.readyIconWrap}>
                 <Ionicons name="checkmark-circle" size={64} color={COLORS.accentGreen} />
               </View>
-              <Text style={styles.readyTitle}>{stepTitles[5]}</Text>
-              <Text style={styles.readySubtitle}>{stepSubtitles[5]}</Text>
+              <Text style={styles.readyTitle}>{t('onboardingReadyTitle')}</Text>
+              <Text style={styles.readySubtitle}>{t('onboardingReadySubtitle')}</Text>
             </View>
           )}
 
         </ScrollView>
 
-        {/* ── Footer ───────────────────────────────────────────────── */}
+        {/* ── Footer ───────────────────────────────────────────── */}
         <View style={styles.footer}>
 
-          {/* Location step: custom buttons */}
+          {/* Location step: allow / deny buttons */}
           {isLocationStep && (
             <>
               <TouchableOpacity
@@ -417,13 +439,17 @@ export default function OnboardingScreen() {
                   </>
                 )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.skipStepBtn} onPress={handleLocationDeny} disabled={locationLoading}>
+              <TouchableOpacity
+                style={styles.skipStepBtn}
+                onPress={handleLocationDeny}
+                disabled={locationLoading}
+              >
                 <Text style={styles.skipStepText}>{t('locationNotNow')}</Text>
               </TouchableOpacity>
             </>
           )}
 
-          {/* All other steps: standard continue button */}
+          {/* All other steps: standard continue */}
           {!isLocationStep && (
             <>
               <TouchableOpacity
@@ -439,7 +465,7 @@ export default function OnboardingScreen() {
                   <Ionicons
                     name={isReadyStep ? 'checkmark' : 'arrow-forward'}
                     size={20}
-                    color={canContinue() ? '#000' : COLORS.textMuted}
+                    color="#000"
                   />
                 )}
               </TouchableOpacity>
@@ -462,9 +488,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   safe: { flex: 1 },
 
-  // Progress
-  progressBar: { flexDirection: 'row', paddingHorizontal: SPACING.lg, paddingTop: SPACING.sm, gap: SPACING.xs },
-  progressSeg: { flex: 1, height: 4, borderRadius: 2, backgroundColor: COLORS.border },
+  // Progress bar — 9 tight segments
+  progressBar: {
+    flexDirection: 'row',
+    paddingHorizontal: SPACING.lg,
+    paddingTop: SPACING.sm,
+    gap: 2,
+  },
+  progressSeg: { flex: 1, height: 3, borderRadius: 2, backgroundColor: COLORS.border },
   progressSegActive: { backgroundColor: COLORS.accentGreen },
 
   // Skip all
@@ -475,11 +506,6 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xl },
   scrollContentCentered: { flexGrow: 1, alignItems: 'center', justifyContent: 'center' },
-
-  // Step header (steps 1–3)
-  header: { paddingTop: 4, paddingBottom: SPACING.lg },
-  stepTitle: { fontSize: 26, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: -0.5, marginBottom: 4 },
-  stepSubtitle: { fontSize: 15, color: COLORS.textSecondary },
 
   // Welcome step
   welcomeWrap: { alignItems: 'center', paddingVertical: SPACING.xl },
@@ -494,16 +520,44 @@ const styles = StyleSheet.create({
   },
   logoClip: { width: 150, height: 150, borderRadius: 30, overflow: 'hidden' },
   logoImg: { width: 150, height: 150 },
-  welcomeTitle: { fontSize: 34, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: -1, marginBottom: SPACING.sm },
+  welcomeTitle: {
+    fontSize: 34, fontWeight: '900', color: COLORS.textPrimary,
+    letterSpacing: -1, marginBottom: SPACING.sm,
+  },
   welcomeSubtitle: { fontSize: 16, color: COLORS.textSecondary, textAlign: 'center' },
+
+  // Feature slides (steps 1–3)
+  featureWrap: { alignItems: 'center', paddingHorizontal: SPACING.md },
+  featureIconWrap: {
+    width: 110, height: 110, borderRadius: 55,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: SPACING.xl,
+    shadowOpacity: 0.25, shadowRadius: 18,
+    shadowOffset: { width: 0, height: 0 }, elevation: 10,
+  },
+  featureTitle: {
+    fontSize: 28, fontWeight: '800', color: COLORS.textPrimary,
+    letterSpacing: -0.5, marginBottom: SPACING.md, textAlign: 'center',
+  },
+  featureDesc: {
+    fontSize: 16, color: COLORS.textSecondary, textAlign: 'center',
+    lineHeight: 24, maxWidth: 300,
+  },
+
+  // Step header (steps 4–6)
+  header: { paddingTop: 4, paddingBottom: SPACING.lg },
+  stepTitle: {
+    fontSize: 26, fontWeight: '800', color: COLORS.textPrimary,
+    letterSpacing: -0.5, marginBottom: 4,
+  },
+  stepSubtitle: { fontSize: 15, color: COLORS.textSecondary },
 
   // Location step
   locationWrap: { alignItems: 'center', paddingTop: SPACING.xl, paddingBottom: SPACING.lg },
   locationIconWrap: {
     width: 80, height: 80, borderRadius: 40,
     backgroundColor: COLORS.accentGreen + '18',
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: SPACING.lg,
+    alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.lg,
   },
   locationSubtitle: { textAlign: 'center', marginBottom: SPACING.md },
   locationBody: {
@@ -516,15 +570,14 @@ const styles = StyleSheet.create({
   readyIconWrap: {
     width: 110, height: 110, borderRadius: 55,
     backgroundColor: COLORS.accentGreen + '18',
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: SPACING.xl,
-    shadowColor: COLORS.accentGreen,
-    shadowOpacity: 0.2,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 8,
+    alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.xl,
+    shadowColor: COLORS.accentGreen, shadowOpacity: 0.2,
+    shadowRadius: 16, shadowOffset: { width: 0, height: 0 }, elevation: 8,
   },
-  readyTitle: { fontSize: 32, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: -0.5, marginBottom: SPACING.sm },
+  readyTitle: {
+    fontSize: 32, fontWeight: '800', color: COLORS.textPrimary,
+    letterSpacing: -0.5, marginBottom: SPACING.sm,
+  },
   readySubtitle: { fontSize: 16, color: COLORS.textSecondary, textAlign: 'center' },
 
   // Grid layout (vehicle + referral)
@@ -541,7 +594,14 @@ const styles = StyleSheet.create({
   gridCardLabel: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, textAlign: 'center' },
   gridCardLabelSelected: { color: COLORS.accentGreen },
   checkmark: { position: 'absolute', top: SPACING.sm, right: SPACING.sm },
-  comingSoonBadge: { marginTop: 5, backgroundColor: COLORS.accentAmber + '25', paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.sm },
+  comingSoonBadge: {
+    marginTop: 5, backgroundColor: COLORS.accentAmber + '25',
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.sm,
+  },
+  comingSoonPill: {
+    backgroundColor: COLORS.accentAmber + '22',
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.sm,
+  },
   comingSoonText: { fontSize: 10, fontWeight: '700', color: COLORS.accentAmber },
 
   // List layout (fuel)
@@ -551,14 +611,10 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.xl, paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg,
     borderWidth: 1.5, borderColor: COLORS.border, ...SHADOWS.card,
   },
-  fuelDot: { width: 12, height: 12, borderRadius: 6, marginRight: SPACING.md },
-  listItemLabel: { flex: 1, fontSize: 16, fontWeight: '600', color: COLORS.textPrimary },
   listItemDisabled: { opacity: 0.45 },
   listItemLabelDisabled: { color: COLORS.textMuted },
-  comingSoonPill: {
-    backgroundColor: COLORS.accentAmber + '22',
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.sm,
-  },
+  fuelDot: { width: 12, height: 12, borderRadius: 6, marginRight: SPACING.md },
+  listItemLabel: { flex: 1, fontSize: 16, fontWeight: '600', color: COLORS.textPrimary },
 
   // Footer
   footer: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.lg, paddingTop: SPACING.sm, gap: SPACING.sm },
