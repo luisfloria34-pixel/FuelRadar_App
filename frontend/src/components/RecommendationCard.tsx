@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, RADIUS, SPACING, SHADOWS } from '../constants/theme';
 import { Station } from '../types';
 import { useStore } from '../store/useStore';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface RecommendationCardProps {
   cheapestStation: Station;
@@ -22,7 +23,8 @@ export const RecommendationCard: React.FC<RecommendationCardProps> = ({
   averagePrice,
   onPress,
 }) => {
-  const { selectedFuelType, t } = useStore();
+  const { selectedFuelType } = useStore();
+  const { t } = useTranslation();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 

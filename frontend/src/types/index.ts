@@ -28,7 +28,22 @@ export interface OpeningTime {
   end: string;
 }
 
+/** API-supported fuel types (Tankerkönig) */
 export type FuelType = 'diesel' | 'e5' | 'e10';
+
+/** Extended fuel preference (includes types the API doesn't price yet) */
+export type FuelPreference =
+  | 'diesel' | 'e5' | 'e10'
+  | 'super_plus' | 'premium_diesel'
+  | 'lpg' | 'cng' | 'hvo' | 'adblue';
+
+/** Vehicle type for onboarding personalisation */
+export type VehicleType =
+  | 'small_car' | 'sedan' | 'suv' | 'van' | 'motorcycle' | 'electric';
+
+/** Referral source for onboarding analytics */
+export type ReferralSource =
+  | 'tiktok' | 'instagram' | 'friends' | 'website' | 'google' | 'other';
 
 export interface Alert {
   id: string;

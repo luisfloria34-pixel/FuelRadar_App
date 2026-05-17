@@ -1,4 +1,4 @@
-// FuelRadar Translations - German as primary, English as secondary
+// FuelRadar Translations — English default, German optional
 export const translations = {
   de: {
     // General
@@ -234,6 +234,48 @@ export const translations = {
 
     // Notifications
     androidChannelPriceAlertsDesc: 'Benachrichtigungen wenn Kraftstoffpreise fallen',
+
+    // Onboarding — vehicle type page
+    onboardingVehicleTitle: 'Was fährst du?',
+    onboardingVehicleSubtitle: 'Wähle deinen Fahrzeugtyp',
+    vehicleSmallCar: 'Kleinwagen',
+    vehicleSedan: 'Limousine',
+    vehicleSuv: 'SUV',
+    vehicleVan: 'Van / Transporter',
+    vehicleMotorcycle: 'Motorrad',
+    vehicleElectric: 'Elektro',
+    comingSoon: 'Bald verfügbar',
+
+    // Onboarding — fuel preference page
+    onboardingFuelTitle: 'Welchen Kraftstoff tankst du?',
+    onboardingFuelSubtitle: 'Wähle deinen bevorzugten Kraftstoff',
+    fuelSuperPlus: 'Super Plus',
+    fuelPremiumDiesel: 'Premium Diesel',
+    fuelLpg: 'LPG',
+    fuelCng: 'CNG',
+    fuelHvo: 'HVO',
+    fuelAdblue: 'AdBlue',
+    fuelElectricNote: 'Ladesäulen in Kürze',
+
+    // Onboarding — referral page
+    onboardingReferralTitle: 'Wie hast du uns gefunden?',
+    onboardingReferralSubtitle: 'Hilf uns, besser zu werden',
+    referralTiktok: 'TikTok',
+    referralInstagram: 'Instagram',
+    referralFriends: 'Freunde',
+    referralWebsite: 'Website',
+    referralGoogle: 'Google / App Store',
+    referralOther: 'Anderes',
+
+    // Onboarding — location page
+    onboardingLocationTitle: 'Standort freigeben?',
+    onboardingLocationSubtitle: 'Um Tankstellen in deiner Nähe zu finden',
+
+    // General UI
+    selectOne: 'Wähle eine Option',
+    continue: 'Weiter',
+    finish: 'Fertig',
+    skip_for_now: 'Vorerst überspringen',
   },
   en: {
     // General
@@ -469,6 +511,48 @@ export const translations = {
 
     // Notifications
     androidChannelPriceAlertsDesc: 'Notifications when fuel prices drop',
+
+    // Onboarding — vehicle type page
+    onboardingVehicleTitle: 'What do you drive?',
+    onboardingVehicleSubtitle: 'Choose your vehicle type',
+    vehicleSmallCar: 'Small Car',
+    vehicleSedan: 'Sedan',
+    vehicleSuv: 'SUV',
+    vehicleVan: 'Van',
+    vehicleMotorcycle: 'Motorcycle',
+    vehicleElectric: 'Electric',
+    comingSoon: 'Coming soon',
+
+    // Onboarding — fuel preference page
+    onboardingFuelTitle: 'Which fuel do you use?',
+    onboardingFuelSubtitle: 'Choose your preferred fuel',
+    fuelSuperPlus: 'Super Plus',
+    fuelPremiumDiesel: 'Premium Diesel',
+    fuelLpg: 'LPG',
+    fuelCng: 'CNG',
+    fuelHvo: 'HVO',
+    fuelAdblue: 'AdBlue',
+    fuelElectricNote: 'Charging stations coming soon',
+
+    // Onboarding — referral page
+    onboardingReferralTitle: 'How did you find us?',
+    onboardingReferralSubtitle: 'Help us improve',
+    referralTiktok: 'TikTok',
+    referralInstagram: 'Instagram',
+    referralFriends: 'Friends',
+    referralWebsite: 'Website',
+    referralGoogle: 'Google / App Store',
+    referralOther: 'Other',
+
+    // Onboarding — location page
+    onboardingLocationTitle: 'Allow Location?',
+    onboardingLocationSubtitle: 'To find fuel stations near you',
+
+    // General UI
+    selectOne: 'Select one',
+    continue: 'Continue',
+    finish: 'Finish',
+    skip_for_now: 'Skip for now',
   },
 };
 

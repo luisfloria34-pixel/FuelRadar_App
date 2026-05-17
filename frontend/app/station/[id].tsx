@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
+import { useTranslation } from '../../src/hooks/useTranslation';
 import { fuelApi, PriceHistoryEntry } from '../../src/services/api';
 import { StationDetail, FuelType } from '../../src/types';
 import { Toast } from '../../src/components/Toast';
@@ -31,7 +32,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const CHART_WIDTH = SCREEN_WIDTH - SPACING.lg * 2 - SPACING.md * 2;
 
 function PriceLineChart({ data, color }: { data: PriceHistoryEntry[]; color: string }) {
-  const { t, language } = useStore();
+  const { t, language } = useTranslation();
   const dateLocale = language === 'en' ? 'en-GB' : 'de-DE';
 
   if (data.length === 0) {
@@ -145,7 +146,8 @@ const chartStyles = StyleSheet.create({
 export default function StationDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { isFavorite, addFavorite, removeFavorite, addAlert, t } = useStore();
+  const { isFavorite, addFavorite, removeFavorite, addAlert } = useStore();
+  const { t, language } = useTranslation();
 
   const [station, setStation] = useState<StationDetail | null>(null);
   const [loading, setLoading] = useState(true);

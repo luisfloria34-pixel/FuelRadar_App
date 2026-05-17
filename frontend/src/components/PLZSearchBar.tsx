@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, RADIUS, SPACING, SHADOWS } from '../constants/theme';
 import { fuelApi } from '../services/api';
 import { useStore } from '../store/useStore';
+import { useTranslation } from '../hooks/useTranslation';
 
 const RADIUS_OPTIONS = [2, 5, 10, 25];
 
@@ -20,7 +21,8 @@ interface PLZSearchBarProps {
 }
 
 export const PLZSearchBar: React.FC<PLZSearchBarProps> = ({ onSearchComplete }) => {
-  const { searchRadius, setSearchRadius, setSearchQuery, setSearchLocationName, t } = useStore();
+  const { searchRadius, setSearchRadius, setSearchQuery, setSearchLocationName } = useStore();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [locationLabel, setLocationLabel] = useState('');
@@ -48,7 +50,7 @@ export const PLZSearchBar: React.FC<PLZSearchBarProps> = ({ onSearchComplete }) 
         onSearchComplete?.(first.lat, first.lng, searchRadius, label);
       }
     } catch (error) {
-      console.error('Geocode error:', error);
+      console.warn('[PLZSearch] Geocode error:', error instanceof Error ? error.message : error);
     } finally {
       setIsSearching(false);
     }
@@ -74,7 +76,7 @@ export const PLZSearchBar: React.FC<PLZSearchBarProps> = ({ onSearchComplete }) 
         onSearchComplete?.(first.lat, first.lng, newRadius, locationLabel);
       }
     } catch (error) {
-      console.error('Re-search error:', error);
+      console.warn('[PLZSearch] Re-search error:', error instanceof Error ? error.message : error);
     } finally {
       setIsSearching(false);
     }

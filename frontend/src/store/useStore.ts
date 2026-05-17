@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { Station, FuelType, Alert, Favorite, Location } from '../types';
+import { Station, FuelType, FuelPreference, VehicleType, ReferralSource, Alert, Favorite, Location } from '../types';
 import { translations, Language, TranslationKey } from '../constants/translations';
 import { fuelApi } from '../services/api';
 
@@ -62,6 +62,14 @@ interface AppState {
   setHasSeenOnboarding: (seen: boolean) => Promise<void>;
   loadOnboardingStatus: () => Promise<void>;
 
+  // Onboarding preferences
+  vehicleType: VehicleType | null;
+  setVehicleType: (type: VehicleType) => Promise<void>;
+  fuelPreference: FuelPreference | null;
+  setFuelPreference: (pref: FuelPreference) => Promise<void>;
+  referralSource: ReferralSource | null;
+  setReferralSource: (source: ReferralSource) => Promise<void>;
+
   // Loading state
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
@@ -77,6 +85,9 @@ const LANGUAGE_KEY = '@fuelradar_language';
 const LOCATION_KEY = '@fuelradar_location';
 const LOCATION_PERMISSION_KEY = '@fuelradar_location_permission';
 const DEVICE_ID_KEY = '@fuelradar_device_id';
+const VEHICLE_TYPE_KEY = '@fuelradar_vehicle_type';
+const FUEL_PREFERENCE_KEY = '@fuelradar_fuel_preference';
+const REFERRAL_SOURCE_KEY = '@fuelradar_referral_source';
 
 const generateUUID = (): string => {
   const chars = '0123456789abcdef';
@@ -111,7 +122,7 @@ const safeStorage = {
 };
 
 export const useStore = create<AppState>((set, get) => ({
-  language: 'de' as Language,
+  language: 'en' as Language,
   setLanguage: async (lang) => {
     set({ language: lang });
     await safeStorage.setItem(LANGUAGE_KEY, lang);
@@ -344,15 +355,43 @@ export const useStore = create<AppState>((set, get) => ({
     } catch {}
   },
 
+  // Onboarding preferences
+  vehicleType: null,
+  setVehicleType: async (type) => {
+    set({ vehicleType: type });
+    await safeStorage.setItem(VEHICLE_TYPE_KEY, type);
+  },
+  fuelPreference: null,
+  setFuelPreference: async (pref) => {
+    set({ fuelPreference: pref });
+    await safeStorage.setItem(FUEL_PREFERENCE_KEY, pref);
+    // Map extended preference to the API-supported fuel type
+    const fuelMap: Record<string, FuelType> = {
+      diesel: 'diesel', premium_diesel: 'diesel',
+      e5: 'e5', super_plus: 'e5',
+      e10: 'e10', lpg: 'e10', cng: 'e10', hvo: 'diesel', adblue: 'diesel',
+    };
+    const mapped = fuelMap[pref];
+    if (mapped) set({ selectedFuelType: mapped });
+  },
+  referralSource: null,
+  setReferralSource: async (source) => {
+    set({ referralSource: source });
+    await safeStorage.setItem(REFERRAL_SOURCE_KEY, source);
+  },
+
   isLoading: false,
   setIsLoading: (loading) => set({ isLoading: loading }),
 
   initializeApp: async () => {
     try {
-      const [storedLang, storedLocation, storedPermission] = await Promise.all([
+      const [storedLang, storedLocation, storedPermission, storedVehicle, storedFuelPref, storedReferral] = await Promise.all([
         safeStorage.getItem(LANGUAGE_KEY),
         safeStorage.getItem(LOCATION_KEY),
         safeStorage.getItem(LOCATION_PERMISSION_KEY),
+        safeStorage.getItem(VEHICLE_TYPE_KEY),
+        safeStorage.getItem(FUEL_PREFERENCE_KEY),
+        safeStorage.getItem(REFERRAL_SOURCE_KEY),
       ]);
 
       if (storedLang && (storedLang === 'de' || storedLang === 'en')) {
@@ -364,6 +403,9 @@ export const useStore = create<AppState>((set, get) => ({
       if (storedPermission) {
         set({ locationPermissionStatus: storedPermission as any });
       }
+      if (storedVehicle) set({ vehicleType: storedVehicle as any });
+      if (storedFuelPref) set({ fuelPreference: storedFuelPref as any });
+      if (storedReferral) set({ referralSource: storedReferral as any });
 
       // Load or generate device UUID then register with backend
       const deviceId = await get().loadDeviceId();
@@ -375,7 +417,7 @@ export const useStore = create<AppState>((set, get) => ({
       await get().loadFavorites();
       await get().loadAlerts();
     } catch (error) {
-      console.log('Error initializing app:', error);
+      console.warn('[initializeApp]', error instanceof Error ? error.message : error);
     }
   },
 }));

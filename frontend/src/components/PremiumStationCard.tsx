@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, RADIUS, SPACING, SHADOWS } from '../constants/theme';
 import { Station } from '../types';
 import { useStore } from '../store/useStore';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface PremiumStationCardProps {
   station: Station;
@@ -20,7 +21,8 @@ export const PremiumStationCard: React.FC<PremiumStationCardProps> = ({
   isFavorite = false,
   rank,
 }) => {
-  const { selectedFuelType, t } = useStore();
+  const { selectedFuelType } = useStore();
+  const { t } = useTranslation();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const favAnim = useRef(new Animated.Value(1)).current;
 
