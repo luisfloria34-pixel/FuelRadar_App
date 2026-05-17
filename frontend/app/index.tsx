@@ -4,10 +4,12 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING } from '../src/constants/theme';
 import { useStore } from '../src/store/useStore';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 export default function SplashScreen() {
   const router = useRouter();
   const { initializeApp } = useStore();
+  const { t } = useTranslation();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [scaleAnim] = useState(new Animated.Value(0.8));
 
@@ -64,7 +66,7 @@ export default function SplashScreen() {
           </View>
         </View>
         <Text style={styles.title}>FuelRadar</Text>
-        <Text style={styles.tagline}>Live Kraftstoffpreise in Deutschland</Text>
+        <Text style={styles.tagline}>{t('tagline')}</Text>
       </Animated.View>
 
       <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>

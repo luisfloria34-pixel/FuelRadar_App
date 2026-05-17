@@ -48,10 +48,10 @@ export default function HomeScreen() {
 
   const h = new Date().getHours();
   const greeting = h >= 5 && h < 12
-    ? `${t('goodMorning')} \u26FD`
+    ? t('goodMorning')
     : h < 18
-      ? `${t('goodAfternoon')} \u26FD`
-      : `${t('goodEvening')} \u26FD`;
+      ? t('goodAfternoon')
+      : t('goodEvening');
 
   const [refreshing, setRefreshing] = useState(false);
   const [cheapestStation, setCheapestStation] = useState<Station | null>(null);
@@ -289,7 +289,10 @@ export default function HomeScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.greetingRow}>
-            <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
+            <View style={styles.greetingContent}>
+              <Ionicons name="car-sport-outline" size={16} color={COLORS.accentGreen} style={styles.greetingIcon} />
+              <Text style={styles.greeting} testID="home-greeting">{greeting}</Text>
+            </View>
             <TouchableOpacity
               testID="settings-btn"
               style={styles.settingsButton}
@@ -388,6 +391,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: SPACING.sm,
+  },
+  greetingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  greetingIcon: {
+    marginRight: 6,
   },
   greeting: {
     fontSize: 16,

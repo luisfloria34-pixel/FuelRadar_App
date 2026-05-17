@@ -36,9 +36,21 @@ export default function SettingsScreen() {
   const radiusOptions = [2, 5, 10, 25];
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
-  const handleResetOnboarding = async () => {
-    await setHasSeenOnboarding(false);
-    Alert.alert(t('success'), t('onboardingResetSuccess'));
+  const handleResetOnboarding = () => {
+    Alert.alert(
+      t('resetOnboarding'),
+      t('showWelcomeAgain'),
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('confirm'),
+          onPress: async () => {
+            await setHasSeenOnboarding(false);
+            router.replace('/onboarding');
+          },
+        },
+      ],
+    );
   };
 
   const handleLanguageChange = (lang: Language) => {

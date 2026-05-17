@@ -10,11 +10,11 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS } from '../src/constants/theme';
-import { useStore } from '../src/store/useStore';
+import { useTranslation } from '../src/hooks/useTranslation';
 
 export default function DatenschutzScreen() {
   const router = useRouter();
-  const { language } = useStore();
+  const { language } = useTranslation();
 
   const content = language === 'de' ? {
     title: 'Datenschutzerklärung',
@@ -129,7 +129,7 @@ export default function DatenschutzScreen() {
         ))}
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>FuelRadar © 2025</Text>
+          <Text style={styles.footerText}>FuelRadar © {new Date().getFullYear()}</Text>
         </View>
       </ScrollView>
     </SafeAreaView>

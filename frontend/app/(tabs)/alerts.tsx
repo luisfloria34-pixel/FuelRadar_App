@@ -118,7 +118,9 @@ export default function AlertsScreen() {
         <View>
           <Text style={styles.title} testID="alerts-title">{t('priceAlerts')}</Text>
           <Text style={styles.subtitle}>
-            {alerts.length > 0 ? `${alerts.length} ${t('activeAlertsCount')}` : t('getNotified')}
+            {alerts.length > 0
+              ? `${alerts.length} ${alerts.length === 1 ? t('activeAlertSingular') : t('activeAlertsCount')}`
+              : t('getNotified')}
           </Text>
         </View>
         <TouchableOpacity

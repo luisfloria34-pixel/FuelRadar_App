@@ -5,6 +5,7 @@ import { COLORS, RADIUS, SPACING, SHADOWS } from '../constants/theme';
 import { Station, FuelType } from '../types';
 import { PriceTag } from './PriceTag';
 import { useStore } from '../store/useStore';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface StationCardProps {
   station: Station;
@@ -17,7 +18,8 @@ export const StationCard: React.FC<StationCardProps> = ({
   onPress,
   showAllPrices = false,
 }) => {
-  const { selectedFuelType, isFavorite, t } = useStore();
+  const { selectedFuelType, isFavorite } = useStore();
+  const { t } = useTranslation();
   const favorite = isFavorite(station.id);
 
   const getPrice = () => {
