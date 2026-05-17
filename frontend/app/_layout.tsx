@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, StyleSheet } from 'react-native';
 import { COLORS } from '../src/constants/theme';
-import { useNotifications } from '../src/hooks/useNotifications';
+import { useNotifications, initAndroidChannels } from '../src/hooks/useNotifications';
+
+// Create Android notification channels as early as possible so local
+// notifications work immediately (Android 8+ requires channels to exist first).
+initAndroidChannels();
 
 function NotificationSetup() {
   useNotifications();

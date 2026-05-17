@@ -34,15 +34,42 @@ export async function requestNotificationPermissions(): Promise<PermissionStatus
 
 async function setupAndroidChannel() {
   if (Platform.OS !== 'android') return;
+  // Use safe hardcoded strings — store may not be hydrated when this runs at startup.
+  // These are only visible in Android OS notification settings.
   const { t } = useStore.getState();
+  const channelName = t('priceAlerts') || 'Preisalarme';
+  const channelDesc = t('androidChannelPriceAlertsDesc') || 'Benachrichtigungen wenn Kraftstoffpreise fallen';
   await Notifications.setNotificationChannelAsync('price-alerts', {
-    name: t('priceAlerts'),
-    description: t('androidChannelPriceAlertsDesc'),
+    name: channelName,
+    description: channelDesc,
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: '#32D74B',
     sound: 'default',
   });
+}
+
+async function setupDefaultAndroidChannel() {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync('default', {
+    name: 'FuelRadar',
+    importance: Notifications.AndroidImportance.DEFAULT,
+    sound: 'default',
+  });
+}
+
+/**
+ * Call once at app startup (before any notifications are scheduled).
+ * Creates required Android notification channels so local demo notifications
+ * work on Android 8+ even before the user registers for push.
+ */
+export async function initAndroidChannels(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  try {
+    await Promise.all([setupDefaultAndroidChannel(), setupAndroidChannel()]);
+  } catch (err) {
+    console.warn('[Notifications] Channel init failed (non-fatal):', err);
+  }
 }
 
 // Modern Expo Go detection: appOwnership === 'expo' means running in Expo Go
