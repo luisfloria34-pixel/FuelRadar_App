@@ -43,7 +43,7 @@ export type VehicleType =
 
 /** Referral source for onboarding analytics */
 export type ReferralSource =
-  | 'tiktok' | 'instagram' | 'friends' | 'website' | 'google' | 'other';
+  | 'tiktok' | 'instagram' | 'friends' | 'website' | 'google' | 'app_store' | 'other';
 
 export interface Alert {
   id: string;

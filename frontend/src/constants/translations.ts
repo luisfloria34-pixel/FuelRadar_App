@@ -248,7 +248,7 @@ export const translations = {
     comingSoon: 'Bald verfügbar',
 
     // Onboarding — fuel preference page
-    onboardingFuelTitle: 'Welchen Kraftstoff tankst du?',
+    onboardingFuelTitle: 'Was tankst du?',
     onboardingFuelSubtitle: 'Wähle deinen bevorzugten Kraftstoff',
     fuelSuperPlus: 'Super Plus',
     fuelPremiumDiesel: 'Premium Diesel',
@@ -265,12 +265,17 @@ export const translations = {
     referralInstagram: 'Instagram',
     referralFriends: 'Freunde',
     referralWebsite: 'Website',
-    referralGoogle: 'Google / App Store',
+    referralGoogle: 'Google',
+    referralAppStore: 'App Store',
     referralOther: 'Anderes',
 
     // Onboarding — location page
     onboardingLocationTitle: 'Standort freigeben?',
     onboardingLocationSubtitle: 'Um Tankstellen in deiner Nähe zu finden',
+
+    // Onboarding — ready screen
+    onboardingReadyTitle: 'Alles bereit',
+    onboardingReadySubtitle: 'FuelRadar ist eingerichtet.',
 
     // General UI
     selectOne: 'Wähle eine Option',
@@ -543,12 +548,17 @@ export const translations = {
     referralInstagram: 'Instagram',
     referralFriends: 'Friends',
     referralWebsite: 'Website',
-    referralGoogle: 'Google / App Store',
+    referralGoogle: 'Google',
+    referralAppStore: 'App Store',
     referralOther: 'Other',
 
     // Onboarding — location page
     onboardingLocationTitle: 'Allow Location?',
     onboardingLocationSubtitle: 'To find fuel stations near you',
+
+    // Onboarding — ready screen
+    onboardingReadyTitle: 'All set',
+    onboardingReadySubtitle: 'FuelRadar is set up.',
 
     // General UI
     selectOne: 'Select one',
