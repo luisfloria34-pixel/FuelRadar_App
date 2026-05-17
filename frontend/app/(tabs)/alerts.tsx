@@ -165,11 +165,11 @@ export default function AlertsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Backend not configured warning */}
-      {!IS_BACKEND_CONFIGURED && (
-        <View style={styles.backendWarning}>
-          <Ionicons name="cloud-offline-outline" size={16} color={COLORS.accentAmber} />
-          <Text style={styles.backendWarningText}>{t('backendWarning')}</Text>
+      {/* Subtle demo-mode note — only shown when local alerts exist but backend is not configured */}
+      {!IS_BACKEND_CONFIGURED && alerts.length > 0 && (
+        <View style={styles.demoAlertNote}>
+          <Ionicons name="information-circle-outline" size={15} color={COLORS.accentAmber} />
+          <Text style={styles.demoAlertNoteText}>{t('demoAlertNote')}</Text>
         </View>
       )}
 
@@ -402,25 +402,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOWS.medium,
   },
-  // Backend warning
-  backendWarning: {
+  // Subtle demo-mode info note (replaces old scary warning banner)
+  demoAlertNote: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: SPACING.sm,
     marginHorizontal: SPACING.lg,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm + 2,
-    backgroundColor: 'rgba(255,179,64,0.08)',
-    borderRadius: RADIUS.lg,
-    borderWidth: 1,
-    borderColor: COLORS.accentAmber + '40',
+    paddingVertical: SPACING.sm,
+    backgroundColor: 'rgba(255,179,64,0.06)',
+    borderRadius: RADIUS.md,
   },
-  backendWarningText: {
+  demoAlertNoteText: {
     flex: 1,
-    fontSize: 13,
-    color: COLORS.accentAmber,
-    lineHeight: 18,
+    fontSize: 12,
+    color: COLORS.accentAmber + 'CC',
+    lineHeight: 17,
   },
   modalBackendNote: {
     flexDirection: 'row',

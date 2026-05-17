@@ -62,7 +62,9 @@ export default function MapScreen() {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [locationDenied, setLocationDenied] = useState(false);
   const [locationPermanentlyDenied, setLocationPermanentlyDenied] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
+  type FetchErrorCode = 'no_env' | 'api_error' | 'no_stations' | null;
+  const [fetchErrorCode, setFetchErrorCode] = useState<FetchErrorCode>(null);
+  const [radiusExpanded, setRadiusExpanded] = useState(false);
   const [isSheetClosing, setIsSheetClosing] = useState(false);
   const sheetAnim = useRef(new Animated.Value(0)).current;
   const mapRef = useRef<any>(null);
@@ -79,32 +81,35 @@ export default function MapScreen() {
     return Math.min(...open.map(s => s[selectedFuelType] as number));
   }, [stations, selectedFuelType]);
 
-  const fetchStations = useCallback(async (lat: number, lng: number, rad: number) => {
-    if (isFetchingRef.current) return;
+  // Returns station count so callers can handle 0-result auto-expand.
+  const fetchStations = useCallback(async (lat: number, lng: number, rad: number): Promise<number> => {
+    if (isFetchingRef.current) return 0;
 
     const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
     const supabaseKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseKey) {
-      console.warn('[fetchStations] Supabase env vars missing — skipping fetch, showing empty state');
+      console.warn('[fetchStations] Supabase env vars missing');
       setStations([]);
-      setFetchError(t('tryAdjustingFilters'));
-      return;
+      setFetchErrorCode('no_env');
+      return 0;
     }
 
     isFetchingRef.current = true;
     setIsLoading(true);
-    setFetchError(null);
+    setFetchErrorCode(null);
     try {
       const response = await fuelApi.getNearbyStations(lat, lng, rad, 'all', 'dist');
       if (response.ok && response.stations) {
         setStations(response.stations);
-      } else {
-        setStations([]);
+        return response.stations.length;
       }
+      setStations([]);
+      return 0;
     } catch (error: any) {
       console.warn('[Map] Fetch error:', error?.message || error);
       setStations([]);
-      setFetchError(t('noStationsFound'));
+      setFetchErrorCode('api_error');
+      return 0;
     } finally {
       isFetchingRef.current = false;
       setIsLoading(false);
@@ -112,7 +117,8 @@ export default function MapScreen() {
   }, []);
 
   const handleRetry = useCallback(() => {
-    setFetchError(null);
+    setFetchErrorCode(null);
+    setRadiusExpanded(false);
     isFetchingRef.current = false;
     fetchStations(mapCenter.lat, mapCenter.lng, searchRadiusRef.current);
   }, [fetchStations, mapCenter]);
@@ -253,19 +259,44 @@ export default function MapScreen() {
     if (q.length < 2) return;
     Keyboard.dismiss();
     setIsSearching(true);
+    setFetchErrorCode(null);
+    setRadiusExpanded(false);
     try {
       const result = await fuelApi.geocode(q);
-      if (result.ok && result.results.length > 0) {
+      if (result.ok && result.results?.length > 0) {
         const r = result.results[0];
         const newCenter = { lat: r.lat, lng: r.lng };
         setMapCenter(newCenter);
         setLocation({ latitude: r.lat, longitude: r.lng });
-        fetchStations(r.lat, r.lng, searchRadius);
         flyTo(newCenter);
+
+        const currentRad = searchRadiusRef.current;
+        const count = await fetchStations(r.lat, r.lng, currentRad);
+
+        // Auto-expand once if no stations found at small radius
+        if (count === 0 && currentRad <= 5) {
+          const expandRad = currentRad <= 2 ? 10 : 25;
+          isFetchingRef.current = false;
+          const count2 = await fetchStations(r.lat, r.lng, expandRad);
+          if (count2 > 0) {
+            setRadiusExpanded(true);
+            setFetchErrorCode(null);
+          } else {
+            setFetchErrorCode('no_stations');
+          }
+        } else if (count === 0) {
+          setFetchErrorCode('no_stations');
+        }
+      } else {
+        setFetchErrorCode('no_stations');
       }
-    } catch (e: any) { console.warn('[Map] Search error:', e?.message || e); }
-    finally { setIsSearching(false); }
-  }, [searchQuery, searchRadius]);
+    } catch (e: any) {
+      console.warn('[Map] Search error:', e?.message || e);
+      setFetchErrorCode('api_error');
+    } finally {
+      setIsSearching(false);
+    }
+  }, [searchQuery, fetchStations]);
 
   const handleRadiusChange = (r: number) => {
     setSearchRadius(r);
@@ -378,12 +409,23 @@ export default function MapScreen() {
           </TouchableOpacity>
         )}
 
-        {fetchError && (
+        {fetchErrorCode && (
           <View style={styles.fetchErrorBanner}>
             <Ionicons name="cloud-offline-outline" size={14} color="#F59E0B" />
-            <Text style={styles.fetchErrorText} numberOfLines={2}>{fetchError}</Text>
+            <View style={styles.fetchErrorContent}>
+              <Text style={styles.fetchErrorText} numberOfLines={2}>
+                {fetchErrorCode === 'no_env'
+                  ? t('noBackendConfigured')
+                  : fetchErrorCode === 'no_stations'
+                  ? t('noStationsHint')
+                  : t('noStationsApiError')}
+              </Text>
+              {radiusExpanded && (
+                <Text style={styles.radiusExpandedText}>{t('radiusExpanded')}</Text>
+              )}
+            </View>
             <TouchableOpacity onPress={handleRetry} style={styles.retryBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Text style={styles.retryBtnText}>Erneut versuchen</Text>
+              <Text style={styles.retryBtnText}>{t('tryAgain')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -597,16 +639,19 @@ pillRow: { marginTop: SPACING.sm },
   },
   deniedText: { fontSize: 12, color: '#F59E0B', flex: 1 },
   fetchErrorBanner: {
-    flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6,
-    backgroundColor: 'rgba(239,68,68,0.1)', borderRadius: RADIUS.lg,
+    flexDirection: 'row', alignItems: 'flex-start', gap: 6,
+    backgroundColor: 'rgba(245,158,11,0.1)', borderRadius: RADIUS.lg,
     paddingHorizontal: SPACING.md, paddingVertical: 8,
-    borderWidth: 1, borderColor: 'rgba(239,68,68,0.25)',
+    borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)',
     marginTop: SPACING.xs,
   },
-  fetchErrorText: { fontSize: 12, color: '#FCA5A5', flex: 1, flexShrink: 1 },
+  fetchErrorContent: { flex: 1, flexShrink: 1 },
+  fetchErrorText: { fontSize: 12, color: '#FCD34D', lineHeight: 17 },
+  radiusExpandedText: { fontSize: 11, color: '#86EFAC', marginTop: 2, fontWeight: '500' },
   retryBtn: {
-    backgroundColor: 'rgba(239,68,68,0.2)', borderRadius: RADIUS.md,
-    paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(239,68,68,0.4)',
+    backgroundColor: 'rgba(245,158,11,0.15)', borderRadius: RADIUS.md,
+    paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1,
+    borderColor: 'rgba(245,158,11,0.35)', flexShrink: 0,
   },
-  retryBtnText: { fontSize: 12, fontWeight: '700', color: '#FCA5A5' },
+  retryBtnText: { fontSize: 12, fontWeight: '700', color: '#FCD34D' },
 });
