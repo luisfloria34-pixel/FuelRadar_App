@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../src/constants/theme';
 import { useStore } from '../src/store/useStore';
 import { useTranslation } from '../src/hooks/useTranslation';
-import { FuelType } from '../src/types';
+import { FuelType, FuelPreference } from '../src/types';
 import { Language } from '../src/constants/translations';
 
 // All AsyncStorage keys to wipe on onboarding reset
@@ -30,16 +30,29 @@ export default function SettingsScreen() {
   const router = useRouter();
   const {
     selectedFuelType, setSelectedFuelType,
+    fuelPreference, setFuelPreference,
     searchRadius, setSearchRadius,
     setHasSeenOnboarding,
     setLanguage,
   } = useStore();
   const { t, language } = useTranslation();
 
-  const fuelOptions: { type: FuelType; label: string; color: string }[] = [
-    { type: 'diesel', label: t('diesel'), color: COLORS.diesel },
-    { type: 'e5', label: t('superE5'), color: COLORS.e5 },
-    { type: 'e10', label: t('superE10'), color: COLORS.e10 },
+  // Active selection: prefer the persisted fuelPreference, fall back to selectedFuelType
+  const activeFuelPref: FuelPreference | FuelType = fuelPreference ?? selectedFuelType;
+
+  type FuelSettingsOption = { type: FuelPreference; label: string; color: string; disabled?: boolean };
+
+  const activeFuelOptions: FuelSettingsOption[] = [
+    { type: 'diesel', label: t('diesel'),   color: COLORS.diesel },
+    { type: 'e5',     label: t('superE5'),  color: COLORS.e5 },
+    { type: 'e10',    label: t('superE10'), color: COLORS.e10 },
+  ];
+
+  const comingSoonFuelOptions: FuelSettingsOption[] = [
+    { type: 'premium_diesel', label: t('fuelPremiumDiesel'), color: '#94A3B8', disabled: true },
+    { type: 'super_plus',     label: t('fuelSuperPlus'),     color: '#F59E0B', disabled: true },
+    { type: 'lpg',            label: t('fuelLpg'),           color: '#F97316', disabled: true },
+    { type: 'cng',            label: t('fuelCng'),           color: '#22D3EE', disabled: true },
   ];
 
   const radiusOptions = [2, 5, 10, 25];
@@ -141,30 +154,51 @@ export default function SettingsScreen() {
         {/* Fuel Preferences */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('fuelPreferences').toUpperCase()}</Text>
-          <View style={styles.card}>
-            <Text style={styles.cardLabel}>{t('preferredFuel')}</Text>
-            <View style={styles.optionsRow}>
-              {fuelOptions.map((option) => (
+          <View style={styles.settingsCard}>
+            {activeFuelOptions.map((option, idx) => {
+              const isSelected = activeFuelPref === option.type;
+              return (
                 <TouchableOpacity
                   key={option.type}
                   testID={`fuel-pref-${option.type}`}
                   style={[
-                    styles.fuelOption,
-                    selectedFuelType === option.type && {
-                      backgroundColor: option.color + '20',
-                      borderColor: option.color,
-                    },
+                    styles.fuelRow,
+                    idx < activeFuelOptions.length - 1 && styles.fuelRowBorder,
+                    isSelected && { backgroundColor: option.color + '10' },
                   ]}
-                  onPress={() => setSelectedFuelType(option.type)}
+                  onPress={() => setFuelPreference(option.type)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={[
-                    styles.fuelOptionText,
-                    selectedFuelType === option.type && { color: option.color },
-                  ]}>
+                  <View style={[styles.fuelRowDot, { backgroundColor: option.color }]} />
+                  <Text style={[styles.fuelRowLabel, isSelected && { color: option.color }]}>
                     {option.label}
                   </Text>
+                  {isSelected && <Ionicons name="checkmark-circle" size={20} color={option.color} />}
                 </TouchableOpacity>
-              ))}
+              );
+            })}
+            {/* Coming soon divider */}
+            <View style={styles.fuelComingSoonDivider}>
+              <View style={styles.fuelDividerLine} />
+              <Text style={styles.fuelDividerLabel}>{t('comingSoon').toUpperCase()}</Text>
+              <View style={styles.fuelDividerLine} />
+            </View>
+            {comingSoonFuelOptions.map((option) => (
+              <View key={option.type} style={[styles.fuelRow, styles.fuelRowDisabled]}>
+                <View style={[styles.fuelRowDot, { backgroundColor: COLORS.textMuted }]} />
+                <Text style={styles.fuelRowLabelDisabled}>{option.label}</Text>
+                <View style={styles.comingSoonPill}>
+                  <Text style={styles.comingSoonPillText}>{t('comingSoon')}</Text>
+                </View>
+              </View>
+            ))}
+            {/* Electric EV */}
+            <View style={[styles.fuelRow, styles.fuelRowDisabled]}>
+              <View style={[styles.fuelRowDot, { backgroundColor: COLORS.textMuted }]} />
+              <Text style={styles.fuelRowLabelDisabled}>{t('fuelElectricEv')}</Text>
+              <View style={styles.comingSoonPill}>
+                <Text style={styles.comingSoonPillText}>{t('comingSoon')}</Text>
+              </View>
             </View>
           </View>
         </View>
@@ -327,6 +361,30 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border,
   },
   fuelOptionText: { fontSize: 14, fontWeight: '600', color: COLORS.textSecondary },
+  fuelRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: SPACING.md, paddingHorizontal: SPACING.lg,
+  },
+  fuelRowBorder: { borderBottomWidth: 1, borderBottomColor: COLORS.border },
+  fuelRowDisabled: { opacity: 0.45 },
+  fuelRowDot: { width: 11, height: 11, borderRadius: 6, marginRight: SPACING.md },
+  fuelRowLabel: { flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.textPrimary },
+  fuelRowLabelDisabled: { flex: 1, fontSize: 15, fontWeight: '600', color: COLORS.textMuted },
+  fuelComingSoonDivider: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: SPACING.lg, paddingVertical: SPACING.sm,
+    borderTopWidth: 1, borderTopColor: COLORS.border,
+  },
+  fuelDividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
+  fuelDividerLabel: {
+    fontSize: 10, fontWeight: '700', color: COLORS.textMuted,
+    letterSpacing: 1, marginHorizontal: SPACING.sm,
+  },
+  comingSoonPill: {
+    backgroundColor: COLORS.accentAmber + '22',
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.sm,
+  },
+  comingSoonPillText: { fontSize: 10, fontWeight: '700', color: COLORS.accentAmber },
   radiusOption: {
     flex: 1, paddingVertical: SPACING.sm + 2, alignItems: 'center',
     borderRadius: RADIUS.lg, borderWidth: 1, borderColor: COLORS.border,

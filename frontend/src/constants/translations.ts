@@ -252,11 +252,12 @@ export const translations = {
     onboardingFuelSubtitle: 'Wähle deinen bevorzugten Kraftstoff',
     fuelSuperPlus: 'Super Plus',
     fuelPremiumDiesel: 'Premium Diesel',
-    fuelLpg: 'LPG',
-    fuelCng: 'CNG',
+    fuelLpg: 'LPG / Autogas',
+    fuelCng: 'CNG / Erdgas',
     fuelHvo: 'HVO',
     fuelAdblue: 'AdBlue',
     fuelElectricNote: 'Ladesäulen in Kürze',
+    fuelElectricEv: 'Elektro / Laden',
 
     // Onboarding — referral page
     onboardingReferralTitle: 'Wie hast du uns gefunden?',
@@ -535,11 +536,12 @@ export const translations = {
     onboardingFuelSubtitle: 'Choose your preferred fuel',
     fuelSuperPlus: 'Super Plus',
     fuelPremiumDiesel: 'Premium Diesel',
-    fuelLpg: 'LPG',
-    fuelCng: 'CNG',
+    fuelLpg: 'LPG / Autogas',
+    fuelCng: 'CNG / Erdgas',
     fuelHvo: 'HVO',
     fuelAdblue: 'AdBlue',
     fuelElectricNote: 'Charging stations coming soon',
+    fuelElectricEv: 'Electric / Charging',
 
     // Onboarding — referral page
     onboardingReferralTitle: 'How did you find us?',

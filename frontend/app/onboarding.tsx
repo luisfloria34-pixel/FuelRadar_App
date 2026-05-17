@@ -60,10 +60,14 @@ export default function OnboardingScreen() {
     { type: 'electric',    icon: 'car-electric',  label: t('vehicleElectric'), disabled: true },
   ];
 
-  const fuelOptions: { type: FuelPreference; label: string; color: string }[] = [
-    { type: 'diesel', label: t('diesel'),   color: COLORS.diesel },
-    { type: 'e5',     label: t('superE5'),  color: COLORS.e5 },
-    { type: 'e10',    label: t('superE10'), color: COLORS.e10 },
+  const fuelOptions: { type: FuelPreference; label: string; color: string; disabled?: boolean }[] = [
+    { type: 'diesel',         label: t('diesel'),           color: COLORS.diesel },
+    { type: 'e5',             label: t('superE5'),          color: COLORS.e5 },
+    { type: 'e10',            label: t('superE10'),         color: COLORS.e10 },
+    { type: 'premium_diesel', label: t('fuelPremiumDiesel'), color: '#94A3B8', disabled: true },
+    { type: 'super_plus',     label: t('fuelSuperPlus'),    color: '#F59E0B', disabled: true },
+    { type: 'lpg',            label: t('fuelLpg'),          color: '#F97316', disabled: true },
+    { type: 'cng',            label: t('fuelCng'),          color: '#22D3EE', disabled: true },
   ];
 
   const referralOptions: { type: ReferralSource; icon: string; label: string }[] = [
@@ -199,7 +203,7 @@ export default function OnboardingScreen() {
         {/* ── Step content ─────────────────────────────────────────── */}
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={[styles.scrollContent, isWelcomeStep && styles.scrollContentCentered]}
+          contentContainerStyle={[styles.scrollContent, (isWelcomeStep || isReadyStep) && styles.scrollContentCentered]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
@@ -207,11 +211,16 @@ export default function OnboardingScreen() {
           {/* Step 0 — Welcome ──────────────────────────────────────── */}
           {step === 0 && (
             <View style={styles.welcomeWrap}>
-              <Image
-                source={require('../assets/images/logo.jpg')}
-                style={styles.logoImg}
-                resizeMode="contain"
-              />
+              {/* Outer view carries the glow shadow; inner clips to rounded square */}
+              <View style={styles.logoShadow}>
+                <View style={styles.logoClip}>
+                  <Image
+                    source={require('../assets/images/logo.jpg')}
+                    style={styles.logoImg}
+                    resizeMode="cover"
+                  />
+                </View>
+              </View>
               <Text style={styles.welcomeTitle}>FuelRadar</Text>
               <Text style={styles.welcomeSubtitle}>Live Kraftstoffpreise in Deutschland</Text>
             </View>
@@ -281,30 +290,51 @@ export default function OnboardingScreen() {
             <View style={styles.listCol}>
               {fuelOptions.map((opt) => {
                 const isSelected = selectedFuel === opt.type;
+                const isDisabled = opt.disabled;
                 return (
                   <TouchableOpacity
                     key={opt.type}
                     style={[
                       styles.listItem,
                       isSelected && { borderColor: opt.color, backgroundColor: opt.color + '12' },
+                      isDisabled && styles.listItemDisabled,
                     ]}
                     onPress={() => {
+                      if (isDisabled) return;
                       setSelectedFuel(opt.type);
                       setFuelPreference(opt.type);
                       console.log('[Onboarding] saved fuel:', opt.type);
                     }}
-                    activeOpacity={0.7}
+                    activeOpacity={isDisabled ? 1 : 0.7}
                   >
-                    <View style={[styles.fuelDot, { backgroundColor: opt.color }]} />
-                    <Text style={[styles.listItemLabel, isSelected && { color: opt.color }]}>
+                    <View style={[styles.fuelDot, { backgroundColor: isDisabled ? COLORS.textMuted : opt.color }]} />
+                    <Text style={[
+                      styles.listItemLabel,
+                      isSelected && { color: opt.color },
+                      isDisabled && styles.listItemLabelDisabled,
+                    ]}>
                       {opt.label}
                     </Text>
-                    {isSelected && (
+                    {isDisabled ? (
+                      <View style={styles.comingSoonPill}>
+                        <Text style={styles.comingSoonText}>{t('comingSoon')}</Text>
+                      </View>
+                    ) : isSelected ? (
                       <Ionicons name="checkmark-circle" size={22} color={opt.color} />
-                    )}
+                    ) : null}
                   </TouchableOpacity>
                 );
               })}
+              {/* EV / Electric — coming soon */}
+              <View style={[styles.listItem, styles.listItemDisabled]}>
+                <View style={[styles.fuelDot, { backgroundColor: COLORS.textMuted }]} />
+                <Text style={[styles.listItemLabel, styles.listItemLabelDisabled]}>
+                  {t('fuelElectricEv')}
+                </Text>
+                <View style={styles.comingSoonPill}>
+                  <Text style={styles.comingSoonText}>{t('comingSoon')}</Text>
+                </View>
+              </View>
             </View>
           )}
 
@@ -453,7 +483,17 @@ const styles = StyleSheet.create({
 
   // Welcome step
   welcomeWrap: { alignItems: 'center', paddingVertical: SPACING.xl },
-  logoImg: { width: 120, height: 120, borderRadius: 24, marginBottom: SPACING.xl },
+  logoShadow: {
+    borderRadius: 30,
+    shadowColor: COLORS.accentGreen,
+    shadowOpacity: 0.35,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 14,
+    marginBottom: SPACING.xl,
+  },
+  logoClip: { width: 150, height: 150, borderRadius: 30, overflow: 'hidden' },
+  logoImg: { width: 150, height: 150 },
   welcomeTitle: { fontSize: 34, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: -1, marginBottom: SPACING.sm },
   welcomeSubtitle: { fontSize: 16, color: COLORS.textSecondary, textAlign: 'center' },
 
@@ -472,14 +512,19 @@ const styles = StyleSheet.create({
   },
 
   // Ready step
-  readyWrap: { alignItems: 'center', paddingTop: SPACING.xl },
+  readyWrap: { alignItems: 'center' },
   readyIconWrap: {
-    width: 100, height: 100, borderRadius: 50,
+    width: 110, height: 110, borderRadius: 55,
     backgroundColor: COLORS.accentGreen + '18',
     alignItems: 'center', justifyContent: 'center',
     marginBottom: SPACING.xl,
+    shadowColor: COLORS.accentGreen,
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 8,
   },
-  readyTitle: { fontSize: 30, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: -0.5, marginBottom: SPACING.sm },
+  readyTitle: { fontSize: 32, fontWeight: '800', color: COLORS.textPrimary, letterSpacing: -0.5, marginBottom: SPACING.sm },
   readySubtitle: { fontSize: 16, color: COLORS.textSecondary, textAlign: 'center' },
 
   // Grid layout (vehicle + referral)
@@ -508,6 +553,12 @@ const styles = StyleSheet.create({
   },
   fuelDot: { width: 12, height: 12, borderRadius: 6, marginRight: SPACING.md },
   listItemLabel: { flex: 1, fontSize: 16, fontWeight: '600', color: COLORS.textPrimary },
+  listItemDisabled: { opacity: 0.45 },
+  listItemLabelDisabled: { color: COLORS.textMuted },
+  comingSoonPill: {
+    backgroundColor: COLORS.accentAmber + '22',
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.sm,
+  },
 
   // Footer
   footer: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.lg, paddingTop: SPACING.sm, gap: SPACING.sm },
