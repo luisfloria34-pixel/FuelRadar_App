@@ -9,7 +9,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../src/constants/theme';
@@ -45,12 +45,12 @@ export default function OnboardingScreen() {
   // ─── Option lists ────────────────────────────────────────────────────────────
 
   const vehicleOptions: { type: VehicleType; icon: string; label: string; disabled?: boolean }[] = [
-    { type: 'small_car',   icon: '🚗', label: t('vehicleSmallCar') },
-    { type: 'sedan',       icon: '🚙', label: t('vehicleSedan') },
-    { type: 'suv',         icon: '🏎️', label: t('vehicleSuv') },
-    { type: 'van',         icon: '🚐', label: t('vehicleVan') },
-    { type: 'motorcycle',  icon: '🏍️', label: t('vehicleMotorcycle') },
-    { type: 'electric',    icon: '⚡', label: t('vehicleElectric'), disabled: true },
+    { type: 'small_car',   icon: 'car-hatchback',  label: t('vehicleSmallCar') },
+    { type: 'sedan',       icon: 'car-limousine',  label: t('vehicleSedan') },
+    { type: 'suv',         icon: 'car-estate',     label: t('vehicleSuv') },
+    { type: 'van',         icon: 'van-utility',    label: t('vehicleVan') },
+    { type: 'motorcycle',  icon: 'motorbike',      label: t('vehicleMotorcycle') },
+    { type: 'electric',    icon: 'car-electric',   label: t('vehicleElectric'), disabled: true },
   ];
 
   const fuelOptions: { type: FuelPreference; label: string; color: string }[] = [
@@ -79,7 +79,7 @@ export default function OnboardingScreen() {
   const canContinue = () => {
     if (step === 0) return selectedVehicle !== null;
     if (step === 1) return selectedFuel !== null;
-    if (step === 2) return selectedReferral !== null;
+    if (step === 2) return true; // referral is optional
     return false;
   };
 
@@ -191,6 +191,11 @@ export default function OnboardingScreen() {
             <View style={styles.grid}>
               {vehicleOptions.map((opt) => {
                 const isSelected = selectedVehicle === opt.type;
+                const iconColor = isSelected
+                  ? COLORS.accentGreen
+                  : opt.disabled
+                  ? COLORS.textMuted
+                  : COLORS.textSecondary;
                 return (
                   <TouchableOpacity
                     key={opt.type}
@@ -206,7 +211,12 @@ export default function OnboardingScreen() {
                     }}
                     activeOpacity={opt.disabled ? 1 : 0.7}
                   >
-                    <Text style={styles.gridCardIcon}>{opt.icon}</Text>
+                    <MaterialCommunityIcons
+                      name={opt.icon as any}
+                      size={38}
+                      color={iconColor}
+                      style={styles.vehicleIcon}
+                    />
                     <Text style={[styles.gridCardLabel, isSelected && styles.gridCardLabelSelected]}>
                       {opt.label}
                     </Text>
@@ -347,6 +357,7 @@ const styles = StyleSheet.create({
   gridCardSelected: { borderColor: COLORS.accentGreen, backgroundColor: COLORS.accentGreen + '10' },
   gridCardDisabled: { opacity: 0.4 },
   gridCardIcon: { fontSize: 32, marginBottom: SPACING.sm },
+  vehicleIcon: { marginBottom: SPACING.sm },
   gridCardLabel: { fontSize: 13, fontWeight: '600', color: COLORS.textSecondary, textAlign: 'center' },
   gridCardLabelSelected: { color: COLORS.accentGreen },
   checkmark: { position: 'absolute', top: SPACING.sm, right: SPACING.sm },

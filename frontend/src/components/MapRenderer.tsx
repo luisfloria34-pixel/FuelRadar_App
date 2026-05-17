@@ -54,7 +54,7 @@ const ms = StyleSheet.create({
   },
 });
 
-export default function MapRenderer({
+function MapRendererComponent({
   center, userLocation, stations, selectedFuelType, cheapestPrice, selectedStation, onSelectStation, mapRef,
 }: MapRendererProps) {
   const filteredStations = stations.filter(s => s.is_open && s[selectedFuelType] != null);
@@ -103,3 +103,5 @@ export default function MapRenderer({
     </MapView>
   );
 }
+
+export default React.memo(MapRendererComponent);

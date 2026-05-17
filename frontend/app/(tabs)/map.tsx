@@ -56,6 +56,7 @@ export default function MapScreen() {
   const [locationDenied, setLocationDenied] = useState(false);
   const [locationPermanentlyDenied, setLocationPermanentlyDenied] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isSheetClosing, setIsSheetClosing] = useState(false);
   const sheetAnim = useRef(new Animated.Value(0)).current;
   const mapRef = useRef<any>(null);
   const isFetchingRef = useRef(false);
@@ -124,6 +125,7 @@ export default function MapScreen() {
       try {
         const pos = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.High,
+          timeout: 10000,
         });
         const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setMapCenter(c);
@@ -131,15 +133,23 @@ export default function MapScreen() {
         isFetchingRef.current = false; // allow GPS fetch to replace cached fetch
         fetchStations(c.lat, c.lng, rad);
         setLocationDenied(false);
-        // Animate map to real GPS position
         flyTo(c, 13);
         return;
-      } catch {}
+      } catch {
+        // GPS failed even with permission granted — use cached or default
+        setLocationDenied(false);
+        if (!cached) {
+          setMapCenter(DEFAULT_CENTER);
+          fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, rad);
+        }
+        return;
+      }
     }
 
-    setLocationDenied(!granted);
+    setLocationDenied(true);
     if (!cached) {
       setLocation({ latitude: DEFAULT_CENTER.lat, longitude: DEFAULT_CENTER.lng });
+      setMapCenter(DEFAULT_CENTER);
       fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, rad);
     }
   }, [fetchStations]);
@@ -216,7 +226,7 @@ export default function MapScreen() {
       return;
     }
     try {
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High, timeout: 10000 });
       const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       setMapCenter(c);
       setLocation({ latitude: c.lat, longitude: c.lng });
@@ -262,8 +272,10 @@ export default function MapScreen() {
   }, []);
 
   const handleCloseSheet = () => {
+    setIsSheetClosing(true);
     Animated.timing(sheetAnim, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
       setSelectedStation(null);
+      setIsSheetClosing(false);
     });
   };
 
@@ -399,7 +411,10 @@ export default function MapScreen() {
 
       {/* Bottom Sheet */}
       {selectedStation && (
-        <Animated.View style={[styles.sheet, { transform: [{ translateY: sheetTranslateY }] }]}>
+        <Animated.View
+          style={[styles.sheet, { transform: [{ translateY: sheetTranslateY }] }]}
+          pointerEvents={isSheetClosing ? 'none' : 'box-none'}
+        >
           <TouchableOpacity style={styles.sheetHandle} onPress={handleCloseSheet} activeOpacity={0.7}>
             <View style={styles.handleBar} />
           </TouchableOpacity>
