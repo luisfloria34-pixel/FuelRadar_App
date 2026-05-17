@@ -22,6 +22,13 @@ const { width } = Dimensions.get('window');
 const TOTAL_STEPS = 3;
 const CARD_W = (width - SPACING.lg * 2 - SPACING.md) / 2;
 
+/** GPS with hard timeout — expo-location has no built-in timeout option. */
+const getGPS = (ms: number): Promise<Location.LocationObject | null> =>
+  Promise.race([
+    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+
 export default function OnboardingScreen() {
   const router = useRouter();
   const {
@@ -85,19 +92,24 @@ export default function OnboardingScreen() {
 
   /** Save answers, mark onboarding done, go to main tabs */
   const finishOnboarding = async () => {
+    // Re-save values as final confirmation (immediate saves already fired on each tap)
     if (selectedVehicle) await setVehicleType(selectedVehicle);
     if (selectedFuel)   await setFuelPreference(selectedFuel);
     if (selectedReferral) await setReferralSource(selectedReferral);
 
     await setHasSeenOnboarding(true);
     console.log('[Onboarding] completed — vehicle:', selectedVehicle, '| fuel:', selectedFuel, '| referral:', selectedReferral);
+    console.log('[Onboarding] navigating to app');
     router.replace('/(tabs)');
   };
 
   /** Skip entire onboarding — still marks it as seen */
   const handleSkipAll = async () => {
     console.log('[Onboarding] skipped entirely');
+    // Treat as denied so the map does not re-show the location modal
+    await setLocationPermissionStatus('denied');
     await setHasSeenOnboarding(true);
+    console.log('[Onboarding] navigating to app');
     router.replace('/(tabs)');
   };
 
@@ -126,20 +138,27 @@ export default function OnboardingScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         await setLocationPermissionStatus('granted');
-        try {
-          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+        console.log('[Onboarding] saved location permission: granted');
+        const pos = await getGPS(8000);
+        if (pos) {
           setLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
-        } catch {}
+        }
       } else {
         await setLocationPermissionStatus('denied');
+        console.log('[Onboarding] saved location permission: denied (OS denied)');
       }
-    } catch {}
+    } catch {
+      // requestForegroundPermissionsAsync failed — treat as denied
+      await setLocationPermissionStatus('denied');
+      console.log('[Onboarding] saved location permission: denied (error)');
+    }
     await finishOnboarding();
   };
 
   const handleLocationDeny = async () => {
     setShowLocationModal(false);
     await setLocationPermissionStatus('denied');
+    console.log('[Onboarding] saved location permission: denied (user skipped)');
     await finishOnboarding();
   };
 
@@ -206,8 +225,9 @@ export default function OnboardingScreen() {
                     ]}
                     onPress={() => {
                       if (opt.disabled) return;
-                      console.log('[Onboarding] selected vehicle:', opt.type);
                       setSelectedVehicle(opt.type);
+                      setVehicleType(opt.type); // immediate persist
+                      console.log('[Onboarding] saved vehicle:', opt.type);
                     }}
                     activeOpacity={opt.disabled ? 1 : 0.7}
                   >
@@ -249,8 +269,9 @@ export default function OnboardingScreen() {
                       isSelected && { borderColor: opt.color, backgroundColor: opt.color + '12' },
                     ]}
                     onPress={() => {
-                      console.log('[Onboarding] selected fuel:', opt.type);
                       setSelectedFuel(opt.type);
+                      setFuelPreference(opt.type); // immediate persist + updates selectedFuelType
+                      console.log('[Onboarding] saved fuel:', opt.type);
                     }}
                     activeOpacity={0.7}
                   >
@@ -277,8 +298,9 @@ export default function OnboardingScreen() {
                     key={opt.type}
                     style={[styles.gridCard, isSelected && styles.gridCardSelected]}
                     onPress={() => {
-                      console.log('[Onboarding] selected referral:', opt.type);
                       setSelectedReferral(opt.type);
+                      setReferralSource(opt.type); // immediate persist
+                      console.log('[Onboarding] saved referral:', opt.type);
                     }}
                     activeOpacity={0.7}
                   >

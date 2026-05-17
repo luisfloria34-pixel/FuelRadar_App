@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Station, FuelType } from '../../types';
+import { Station, FuelType } from '../types';
 
 interface MapRendererProps {
   center: { lat: number; lng: number };

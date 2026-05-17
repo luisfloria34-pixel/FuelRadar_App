@@ -28,6 +28,13 @@ const RADIUS_OPTIONS = [2, 5, 10, 25];
 const FUEL_TYPES: FuelType[] = ['diesel', 'e5', 'e10'];
 const DEFAULT_CENTER = { lat: 52.520008, lng: 13.404954 };
 
+/** expo-location has no built-in timeout; resolves null after ms if GPS hasn't responded. */
+const getGPS = (ms: number): Promise<Location.LocationObject | null> =>
+  Promise.race([
+    Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+  ]);
+
 export default function MapScreen() {
   const router = useRouter();
   const {
@@ -122,28 +129,24 @@ export default function MapScreen() {
     }
 
     if (granted) {
-      try {
-        const pos = await Location.getCurrentPositionAsync({
-          accuracy: Location.Accuracy.High,
-          timeout: 10000,
-        });
+      const pos = await getGPS(10000);
+      if (pos) {
         const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setMapCenter(c);
         setLocation({ latitude: c.lat, longitude: c.lng });
-        isFetchingRef.current = false; // allow GPS fetch to replace cached fetch
+        isFetchingRef.current = false;
         fetchStations(c.lat, c.lng, rad);
         setLocationDenied(false);
         flyTo(c, 13);
         return;
-      } catch {
-        // GPS failed even with permission granted — use cached or default
-        setLocationDenied(false);
-        if (!cached) {
-          setMapCenter(DEFAULT_CENTER);
-          fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, rad);
-        }
-        return;
       }
+      // GPS timed out or failed — use cached or default without showing denied banner
+      setLocationDenied(false);
+      if (!cached) {
+        setMapCenter(DEFAULT_CENTER);
+        fetchStations(DEFAULT_CENTER.lat, DEFAULT_CENTER.lng, rad);
+      }
+      return;
     }
 
     setLocationDenied(true);
@@ -156,15 +159,21 @@ export default function MapScreen() {
 
   const handleLocationAllow = async () => {
     setShowLocationModal(false);
-    const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
-    if (status === 'granted') {
-      await setLocationPermissionStatus('granted');
-      setLocationPermanentlyDenied(false);
-      await loadLocationAndStations(true);
-    } else {
-      const permStatus = canAskAgain ? 'denied' : 'permanently_denied';
-      await setLocationPermissionStatus(permStatus);
-      setLocationPermanentlyDenied(!canAskAgain);
+    try {
+      const { status, canAskAgain } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        await setLocationPermissionStatus('granted');
+        setLocationPermanentlyDenied(false);
+        await loadLocationAndStations(true);
+      } else {
+        const permStatus = canAskAgain ? 'denied' : 'permanently_denied';
+        await setLocationPermissionStatus(permStatus);
+        setLocationPermanentlyDenied(!canAskAgain);
+        await loadLocationAndStations(false);
+      }
+    } catch {
+      // Permission API failed — treat as denied and continue
+      await setLocationPermissionStatus('denied');
       await loadLocationAndStations(false);
     }
   };
@@ -225,8 +234,8 @@ export default function MapScreen() {
       setShowLocationModal(true);
       return;
     }
-    try {
-      const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High, timeout: 10000 });
+    const pos = await getGPS(10000);
+    if (pos) {
       const c = { lat: pos.coords.latitude, lng: pos.coords.longitude };
       setMapCenter(c);
       setLocation({ latitude: c.lat, longitude: c.lng });
@@ -234,8 +243,8 @@ export default function MapScreen() {
       isFetchingRef.current = false;
       fetchStations(c.lat, c.lng, searchRadiusRef.current);
       setLocationDenied(false);
-    } catch (e) {
-      console.warn('[Location] Could not get current position:', e);
+    } else {
+      console.warn('[Location] GPS did not respond in time');
     }
   }, [fetchStations]);
 

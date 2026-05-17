@@ -404,8 +404,20 @@ export const useStore = create<AppState>((set, get) => ({
         set({ locationPermissionStatus: storedPermission as any });
       }
       if (storedVehicle) set({ vehicleType: storedVehicle as any });
-      if (storedFuelPref) set({ fuelPreference: storedFuelPref as any });
+      if (storedFuelPref) {
+        set({ fuelPreference: storedFuelPref as any });
+        // Restore selectedFuelType from saved preference (same mapping as setFuelPreference)
+        const fuelMap: Record<string, FuelType> = {
+          diesel: 'diesel', premium_diesel: 'diesel',
+          e5: 'e5', super_plus: 'e5',
+          e10: 'e10', lpg: 'e10', cng: 'e10', hvo: 'diesel', adblue: 'diesel',
+        };
+        const mapped = fuelMap[storedFuelPref];
+        if (mapped) set({ selectedFuelType: mapped });
+      }
       if (storedReferral) set({ referralSource: storedReferral as any });
+
+      console.log('[Onboarding] loaded saved state — vehicle:', storedVehicle, '| fuel:', storedFuelPref, '| permission:', storedPermission);
 
       // Load or generate device UUID then register with backend
       const deviceId = await get().loadDeviceId();

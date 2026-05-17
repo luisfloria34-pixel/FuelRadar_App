@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import MapView, { Marker, UrlTile } from 'react-native-maps';
-import { COLORS, RADIUS } from '../../constants/theme';
-import { Station, FuelType } from '../../types';
+import { COLORS, RADIUS } from '../constants/theme';
+import { Station, FuelType } from '../types';
 
 interface MapRendererProps {
   center: { lat: number; lng: number };
