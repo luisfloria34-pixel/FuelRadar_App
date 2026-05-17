@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS } from '../constants/theme';
-import { useStore } from '../store/useStore';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface Props {
   visible: boolean;
@@ -20,7 +20,7 @@ interface Props {
 }
 
 export function LocationPermissionModal({ visible, permanentlyDenied = false, onAllow, onDeny }: Props) {
-  const { t, language } = useStore();
+  const { t, language } = useTranslation();
   const [showWhy, setShowWhy] = useState(false);
 
   const handleAllow = () => {

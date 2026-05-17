@@ -13,11 +13,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
+import { useTranslation } from '../../src/hooks/useTranslation';
 import { fuelApi } from '../../src/services/api';
 
 export default function FavoritesScreen() {
   const router = useRouter();
-  const { favorites, removeFavorite, selectedFuelType, t } = useStore();
+  const { favorites, removeFavorite, selectedFuelType } = useStore();
+  const { t, language } = useTranslation();
   const [prices, setPrices] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
 

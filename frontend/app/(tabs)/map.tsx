@@ -18,6 +18,7 @@ import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
+import { useTranslation } from '../../src/hooks/useTranslation';
 import { fuelApi } from '../../src/services/api';
 import { Station, FuelType } from '../../src/types';
 import MapRenderer from '../../src/components/MapRenderer';
@@ -37,8 +38,9 @@ export default function MapScreen() {
     isLoading, setIsLoading,
     searchRadius, setSearchRadius,
     isFavorite, addFavorite, removeFavorite,
-    t, language,
   } = useStore();
+  // useTranslation ensures re-render when language changes (t ref changes)
+  const { t, language } = useTranslation();
 
   const fuelLabel = (type: FuelType) => {
     if (type === 'diesel') return t('diesel');

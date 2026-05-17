@@ -18,6 +18,7 @@ import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
+import { useTranslation } from '../../src/hooks/useTranslation';
 import { Alert as AlertType, FuelType } from '../../src/types';
 import {
   getNotificationPermissionStatus,
@@ -28,7 +29,9 @@ import {
 import { IS_BACKEND_CONFIGURED } from '../../src/services/api';
 
 export default function AlertsScreen() {
-  const { alerts, addAlert, removeAlert, toggleAlert, deviceId, language, t } = useStore();
+  const { alerts, addAlert, removeAlert, toggleAlert, deviceId } = useStore();
+  // useTranslation ensures re-render when language changes (t ref changes)
+  const { t, language } = useTranslation();
   const [modalVisible, setModalVisible] = useState(false);
   const [newAlert, setNewAlert] = useState({
     fuel_type: 'e10' as FuelType,

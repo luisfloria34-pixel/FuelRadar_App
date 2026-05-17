@@ -3,10 +3,10 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Platform } from 'react-native';
 import { COLORS, SHADOWS } from '../../src/constants/theme';
-import { useStore } from '../../src/store/useStore';
+import { useTranslation } from '../../src/hooks/useTranslation';
 
 export default function TabLayout() {
-  const { t, language } = useStore();
+  const { t, language } = useTranslation();
 
   return (
     <Tabs

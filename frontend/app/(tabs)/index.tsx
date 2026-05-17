@@ -15,6 +15,7 @@ import * as Location from 'expo-location';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
+import { useTranslation } from '../../src/hooks/useTranslation';
 import { fuelApi } from '../../src/services/api';
 import { FuelSegmentedControl } from '../../src/components/FuelSegmentedControl';
 import { PremiumStationCard } from '../../src/components/PremiumStationCard';
@@ -41,9 +42,9 @@ export default function HomeScreen() {
     initializeApp,
     searchRadius,
     searchLocationName,
-    t,
-    language,
   } = useStore();
+  // useTranslation ensures re-render when language changes (t ref changes)
+  const { t, language } = useTranslation();
 
   const h = new Date().getHours();
   const greeting = h >= 5 && h < 12

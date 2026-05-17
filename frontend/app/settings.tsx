@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../src/constants/theme';
 import { useStore } from '../src/store/useStore';
+import { useTranslation } from '../src/hooks/useTranslation';
 import { FuelType } from '../src/types';
 import { Language } from '../src/constants/translations';
 
@@ -22,9 +23,9 @@ export default function SettingsScreen() {
     selectedFuelType, setSelectedFuelType,
     searchRadius, setSearchRadius,
     setHasSeenOnboarding,
-    language, setLanguage,
-    t,
+    setLanguage,
   } = useStore();
+  const { t, language } = useTranslation();
 
   const fuelOptions: { type: FuelType; label: string; color: string }[] = [
     { type: 'diesel', label: t('diesel'), color: COLORS.diesel },
