@@ -1,17 +1,16 @@
-// v3 — Supabase Edge Functions (fetch/GET) + FastAPI backend (fetch/REST)
+// FuelRadar API — all calls go through Supabase Edge Functions.
+// No separate FastAPI backend required.
+
 import { Station, StationDetail } from '../types';
-import { supabase, SUPABASE_FUNCTIONS_URL } from './supabase';
+import { SUPABASE_FUNCTIONS_URL } from './supabase';
 
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
-// ─── URL config ──────────────────────────────────────────────────────────────
+// ─── Exported flag so UI components can show "backend not configured" banners ──
+export const IS_BACKEND_CONFIGURED =
+  !!process.env.EXPO_PUBLIC_SUPABASE_URL && !!SUPABASE_ANON_KEY;
 
-// FastAPI backend (favorites, alerts, device registration).
-// All calls are wrapped in try-catch by useStore so a missing URL is safe.
-const BACKEND_URL = process.env.EXPO_PUBLIC_API_URL ?? null;
-export const IS_BACKEND_CONFIGURED = !!BACKEND_URL;
-
-// ─── Edge-Function helpers (GET with query params) ───────────────────────────
+// ─── Query-string helper ───────────────────────────────────────────────────────
 
 type Params = Record<string, string | number | boolean | undefined | null>;
 
@@ -22,66 +21,51 @@ function qs(params: Params): string {
   return parts.length ? `?${parts.join('&')}` : '';
 }
 
-async function edgeGet<T>(fn: string, params?: Params): Promise<T> {
-  const url = `${SUPABASE_FUNCTIONS_URL}/${fn}${params ? qs(params) : ''}`;
+// ─── Universal Edge Function fetch ────────────────────────────────────────────
+// All requests carry the anon key for Supabase auth.
+// Edge Functions use the service-role key internally to bypass RLS.
+
+async function edgeFetch<T>(
+  method: 'GET' | 'POST' | 'DELETE' | 'PATCH',
+  fn: string,
+  opts: { params?: Params; body?: Record<string, unknown> } = {},
+): Promise<T> {
+  const url = `${SUPABASE_FUNCTIONS_URL}/${fn}${opts.params ? qs(opts.params) : ''}`;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 15_000);
+
   try {
     const res = await fetch(url, {
-      method: 'GET',
+      method,
       headers: {
         'Content-Type': 'application/json',
         'apikey': SUPABASE_ANON_KEY,
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
       },
-      signal: ctrl.signal,
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json() as Promise<T>;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-async function edgePost<T>(fn: string, body: Record<string, unknown>): Promise<T> {
-  const { data, error } = await supabase.functions.invoke(fn, { body });
-  if (error) throw error;
-  return data as T;
-}
-
-// ─── Backend helpers (FastAPI REST) ──────────────────────────────────────────
-
-async function backendFetch<T>(
-  method: 'GET' | 'POST' | 'DELETE' | 'PATCH',
-  path: string,
-  opts: { deviceId?: string; body?: Record<string, unknown> } = {},
-): Promise<T> {
-  if (!BACKEND_URL) {
-    console.warn('[FuelRadar] EXPO_PUBLIC_API_URL not set — skipping backend call:', path);
-    return undefined as unknown as T;
-  }
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 10_000);
-  try {
-    const res = await fetch(`${BACKEND_URL}${path}`, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(opts.deviceId ? { 'X-Device-UUID': opts.deviceId } : {}),
-      },
       ...(opts.body ? { body: JSON.stringify(opts.body) } : {}),
       signal: ctrl.signal,
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    // 204 No Content has no body
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`HTTP ${res.status}${text ? ': ' + text.slice(0, 200) : ''}`);
+    }
+
     const text = await res.text();
-    return text ? JSON.parse(text) : (undefined as unknown as T);
+    return text ? (JSON.parse(text) as T) : (undefined as unknown as T);
   } finally {
     clearTimeout(timer);
   }
 }
 
-// ─── Public interfaces ───────────────────────────────────────────────────────
+// Shorthand helpers
+const edgeGet  = <T>(fn: string, params?: Params) => edgeFetch<T>('GET', fn, { params });
+const edgePost = <T>(fn: string, body: Record<string, unknown>) => edgeFetch<T>('POST', fn, { body });
+const edgePatch = <T>(fn: string, params: Params, body: Record<string, unknown>) =>
+  edgeFetch<T>('PATCH', fn, { params, body });
+const edgeDel  = <T>(fn: string, params: Params) => edgeFetch<T>('DELETE', fn, { params });
+
+// ─── Response shapes ──────────────────────────────────────────────────────────
 
 export interface PriceHistoryEntry {
   price: number;
@@ -100,10 +84,11 @@ export interface StationDetailResponse {
   message?: string;
 }
 
-// ─── API ────────────────────────────────────────────────────────────────────
+// ─── API surface ──────────────────────────────────────────────────────────────
 
 export const fuelApi = {
-  // ── Supabase Edge Functions ──────────────────────────────────────────────
+
+  // ── Station data (Tankerkönig proxy via Edge Functions) ──────────────────
 
   geocode: (query: string) =>
     edgeGet<any>('geocode', { q: query }),
@@ -129,26 +114,27 @@ export const fuelApi = {
   healthCheck: () =>
     edgeGet<any>('health'),
 
-  // ── FastAPI backend (favorites) ──────────────────────────────────────────
+  // ── Favorites (Supabase DB via favorites Edge Function) ──────────────────
 
   getFavorites: (deviceId: string) =>
-    backendFetch<any[]>('GET', `/api/v2/favorites/${deviceId}`),
+    edgeGet<any[]>('favorites', { device_uuid: deviceId }),
 
   addFavorite: (
     deviceId: string,
     data: { station_id: string; station_name: string; station_brand: string; lat: number; lng: number },
   ) =>
-    backendFetch<any>('POST', `/api/v2/favorites/${deviceId}`, {
-      body: { ...data },
+    edgeFetch<any>('POST', 'favorites', {
+      params: { device_uuid: deviceId },
+      body: data,
     }),
 
   removeFavorite: (deviceId: string, stationId: string) =>
-    backendFetch<void>('DELETE', `/api/v2/favorites/${deviceId}/${stationId}`),
+    edgeDel<any>('favorites', { device_uuid: deviceId, station_id: stationId }),
 
-  // ── FastAPI backend (alerts) ─────────────────────────────────────────────
+  // ── Alerts (Supabase DB via alerts Edge Function) ────────────────────────
 
   getAlerts: (deviceId: string) =>
-    backendFetch<any[]>('GET', `/api/v2/alerts/${deviceId}`),
+    edgeGet<any[]>('alerts', { device_uuid: deviceId }),
 
   createAlert: (
     deviceId: string,
@@ -163,17 +149,18 @@ export const fuelApi = {
       radius_km?: number;
     },
   ) =>
-    backendFetch<any>('POST', `/api/v2/alerts/${deviceId}`, {
-      body: { ...data, alert_type: data.alert_type ?? 'fuel_threshold' },
+    edgeFetch<any>('POST', 'alerts', {
+      params: { device_uuid: deviceId },
+      body: { alert_type: 'fuel_threshold', ...data },
     }),
 
   deleteAlert: (deviceId: string, alertId: number) =>
-    backendFetch<void>('DELETE', `/api/v2/alerts/${deviceId}/${alertId}`),
+    edgeDel<any>('alerts', { device_uuid: deviceId, alert_id: alertId }),
 
   updateAlert: (deviceId: string, alertId: number, data: Record<string, unknown>) =>
-    backendFetch<any>('PATCH', `/api/v2/alerts/${deviceId}/${alertId}`, { body: data }),
+    edgePatch<any>('alerts', { device_uuid: deviceId, alert_id: alertId }, data),
 
-  // ── FastAPI backend (devices) ────────────────────────────────────────────
+  // ── Device registration (Supabase DB via devices Edge Function) ──────────
 
   registerDevice: (
     deviceId: string,
@@ -181,17 +168,21 @@ export const fuelApi = {
     platform?: string,
     locale?: string,
   ) =>
-    backendFetch<any>('POST', '/api/v2/devices', {
+    edgeFetch<any>('POST', 'devices', {
       body: {
         device_uuid: deviceId,
-        expo_push_token: pushToken ?? null,
+        ...(pushToken ? { expo_push_token: pushToken } : {}),
         platform: platform ?? null,
-        locale: locale ?? null,
+        locale: locale ?? 'en',
       },
     }),
 
+  // ── Push token (separate edge function for explicit token updates) ────────
+
   registerPushToken: (token: string, deviceId: string) =>
     edgePost<any>('push-tokens', { token, device_id: deviceId }),
+
+  // ── Analytics ────────────────────────────────────────────────────────────
 
   logSearch: (data: Record<string, unknown>) =>
     edgePost<any>('analytics-search', data),

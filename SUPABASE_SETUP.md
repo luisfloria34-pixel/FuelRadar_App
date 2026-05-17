@@ -63,7 +63,13 @@ supabase login
 supabase link --project-ref YOUR_PROJECT_REF
 ```
 
-Deploy all functions at once:
+Deploy all functions at once (Supabase CLI ≥ 1.x):
+
+```bash
+supabase functions deploy
+```
+
+Or individually:
 
 ```bash
 supabase functions deploy geocode
@@ -74,12 +80,10 @@ supabase functions deploy station-price-history
 supabase functions deploy health
 supabase functions deploy push-tokens
 supabase functions deploy analytics-search
-```
-
-Or deploy all at once (Supabase CLI ≥ 1.x):
-
-```bash
-supabase functions deploy
+# New — favorites/alerts/devices (no separate backend needed)
+supabase functions deploy favorites
+supabase functions deploy alerts
+supabase functions deploy devices
 ```
 
 ---
@@ -107,7 +111,7 @@ In **Settings → Database → Connection String → URI**:
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_KEY
-EXPO_PUBLIC_API_URL=https://your-fastapi-backend.onrender.com
+# EXPO_PUBLIC_API_URL is NOT needed — all calls go through Supabase Edge Functions.
 ```
 
 Rebuild or restart the Expo dev server after changing `.env`:
@@ -119,18 +123,10 @@ npx expo start --clear
 
 ---
 
-## Step 7 – Update backend `.env`
+## Step 7 – No separate backend required
 
-```env
-TANKERKOENIG_API_KEY=your-key
-DATABASE_URL=postgresql://postgres:PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres
-SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-SUPABASE_SERVICE_KEY=your-service-role-key
-REDIS_URL=redis://localhost:6379
-DEBUG=false
-```
-
-Redeploy the backend on Render / Railway / Fly.io.
+All favorites, alerts, and device registration are handled by Supabase Edge Functions.
+No FastAPI backend deployment is needed.
 
 ---
 
@@ -167,10 +163,12 @@ Mobile app (Expo)
   │    push-tokens                → Supabase DB (devices)
   │    analytics-search           → Supabase DB (search_logs)
   │
-  └── backendFetch() ─────────► FastAPI backend (Render/Railway/etc.)
-       /api/v2/devices            → Supabase DB
-       /api/v2/favorites/:uuid    → Supabase DB
-       /api/v2/alerts/:uuid       → Supabase DB
+  ├── edgeFetch() ─────────────► Supabase Edge Functions (all CRUD)
+  │    favorites                  → Supabase DB (favorite_stations)
+  │    alerts                     → Supabase DB (alerts)
+  │    devices                    → Supabase DB (devices)
+  │
+  └── [No separate FastAPI backend required]
 
 FastAPI backend
   └── Direct PostgreSQL ───────► Supabase DB (via DATABASE_URL)

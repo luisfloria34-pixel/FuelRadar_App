@@ -20,6 +20,9 @@ Deno.serve(async (req: Request) => {
       'health',
       'push-tokens',
       'analytics-search',
+      'favorites',
+      'alerts',
+      'devices',
     ],
   });
 });
