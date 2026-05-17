@@ -1,5 +1,4 @@
 {
-  "_README": "TEMPLATE — Replace this entire file with the real google-services.json downloaded from Firebase Console (console.firebase.google.com). Without a real file, Android FCM push notifications will not work. See BUILD_SETUP.md Section 4 for step-by-step instructions.",
   "project_info": {
     "project_number": "REPLACE_WITH_FIREBASE_PROJECT_NUMBER",
     "project_id": "fuelradar-REPLACE",
@@ -8,7 +7,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:REPLACE_WITH_FIREBASE_PROJECT_NUMBER:android:REPLACE_WITH_APP_ID",
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000",
         "android_client_info": {
           "package_name": "com.luishustler.fuelradar"
         }

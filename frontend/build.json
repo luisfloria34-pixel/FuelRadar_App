@@ -1,0 +1,48 @@
+{
+  "id": "0ebba3c0-2a7a-4a95-975c-fcc9b11586a8",
+  "status": "ERRORED",
+  "platform": "ANDROID",
+  "error": {
+    "errorCode": "EAS_BUILD_UNKNOWN_GRADLE_ERROR",
+    "message": "Gradle build failed with unknown error. See logs for the \"Run gradlew\" phase for more information."
+  },
+  "artifacts": {},
+  "fingerprint": {
+    "id": "019e367b-8f1b-7b95-8f9a-4429b3093d88",
+    "hash": "111947e9c5e607ca593a744d3d78a894cd93d46d"
+  },
+  "initiatingActor": {
+    "id": "fa7a1099-33c4-4373-b4db-0d7b9ef3b90c",
+    "displayName": "swyone1"
+  },
+  "logFiles": [
+    "https://storage.googleapis.com/eas-workflows-production/logs/839dbd6f-2514-458e-b99c-3e2138c3625e/0ebba3c0-2a7a-4a95-975c-fcc9b11586a8/2026-05-17T15%3A08%3A48Z-0b758084-48b7-49dc-a174-769a928173e7.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260517%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260517T152459Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=3c58ff02ba81f98fd6868ea0f64686a6986b4505fbb6ced69e00e13f9028dcd2f6801110b89a22961204a920f9fbb27b6864dc859ed47fcd821572a5f22e172df385647feb70883e6ee075bb86a703412864f72d5801380bdd97fd60468a0d0c476bcfb5df5f63223bf4ff7bd7bd9ad3506bdfe52e90476ba15cbf207bc274b9f576ef2a0bd8350dcf5328362f8b1de845b878ab41a6308cd3557c54a91d423aa78bab343039a7d5ad4231a78b4b216c0b6c71c2e2a231bdfb24c92b77e04e3abe361b85d040f23d4f75f4523c6bb32787ea451415450914e96575098972d60bb1e97b99a0876459c1ae53db28a5db5dd9f3b9aeb0a206e1c01f96ba33216d21"
+  ],
+  "project": {
+    "id": "839dbd6f-2514-458e-b99c-3e2138c3625e",
+    "name": "fuelradar",
+    "slug": "fuelradar",
+    "ownerAccount": {
+      "id": "24e9edfc-736b-4230-8c3d-6c67a7937e92",
+      "name": "swyone1"
+    }
+  },
+  "distribution": "STORE",
+  "buildProfile": "production",
+  "sdkVersion": "54.0.0",
+  "appVersion": "1.0.0",
+  "appBuildVersion": "2",
+  "gitCommitHash": "cb0d8572b922c200434ec7725d7c7103dadbcd32",
+  "gitCommitMessage": "fix eas build config: correct owner, projectId, remove root stubs",
+  "priority": "NORMAL_PLUS",
+  "createdAt": "2026-05-17T15:08:47.722Z",
+  "updatedAt": "2026-05-17T15:11:51.852Z",
+  "completedAt": "2026-05-17T15:11:51.656Z",
+  "expirationDate": "2026-06-16T15:08:47.765Z",
+  "isForIosSimulator": false,
+  "metrics": {
+    "buildWaitTime": 354,
+    "buildQueueTime": 4914,
+    "buildDuration": 178666
+  }
+}
