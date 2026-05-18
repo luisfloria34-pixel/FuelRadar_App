@@ -1,5 +1,4 @@
 # Supabase CLI configuration for FuelRadar
-# Replace YOUR_PROJECT_REF with the actual project reference from app.supabase.com
 project_id = "jorjciajyaqzjuflxefv"
 
 [api]
@@ -29,6 +28,3 @@ enabled = false
 
 [storage]
 enabled = false
-
-[functions]
-verify_jwt = false
