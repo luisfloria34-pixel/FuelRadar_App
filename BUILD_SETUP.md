@@ -22,12 +22,40 @@ Complete checklist for TestFlight, App Store, and Google Play production builds.
 
 ## 1. Required Environment Variables
 
-Copy `frontend/.env.example` to `frontend/.env` and fill in:
+### Local development
+Copy `frontend/.env.example` to `frontend/.env` — it already has the real Supabase values.
+
+### EAS cloud builds (TestFlight / Play Store)
+The Supabase env vars are embedded directly in `frontend/eas.json` under each build profile's `env` key.  
+**This means all EAS builds automatically receive the correct Supabase URL and anon key — no manual step needed.**
+
+If you ever rotate the Supabase anon key, update all four `env` blocks in `eas.json` (development, preview, simulator, production).
+
+#### Alternative: EAS Environment Variables (if you prefer not to keep them in eas.json)
+Remove the `env` sections from `eas.json` and set them via EAS CLI instead:
 
 ```bash
-EXPO_PUBLIC_SUPABASE_URL=https://YOUR_REF.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_KEY
-EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_KEY   # Android only
+cd frontend
+
+# Supabase URL (public — same for all environments)
+npx eas-cli env:create \
+  --environment production \
+  --name EXPO_PUBLIC_SUPABASE_URL \
+  --value "https://jorjciajyaqzjuflxefv.supabase.co"
+
+# Supabase Anon Key — copy from app.supabase.com → Settings → API → anon (public)
+npx eas-cli env:create \
+  --environment production \
+  --name EXPO_PUBLIC_SUPABASE_ANON_KEY \
+  --value "YOUR_ANON_KEY_FROM_SUPABASE_DASHBOARD"
+```
+
+Repeat with `--environment preview` and `--environment development` for those profiles.
+
+#### Supabase Edge Function secrets (set once per project — never in eas.json)
+```bash
+# TankerKönig API key — get from creativecommons.tankerkoenig.de
+npx supabase secrets set TANKERKOENIG_API_KEY=YOUR_KEY --project-ref jorjciajyaqzjuflxefv
 ```
 
 ---
@@ -200,10 +228,11 @@ eas submit --platform android --latest
 ## 9. TestFlight Checklist
 
 Before submitting to TestFlight:
-- [ ] `eas.json` — fill in `ascAppId` and `appleTeamId`
+- [x] `eas.json` production env — Supabase URL + anon key embedded ✅
+- [ ] `eas.json` submit section — fill in `ascAppId` and `appleTeamId`
 - [ ] APNs key uploaded to EAS
-- [ ] `.env` has `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- [ ] Supabase Edge Functions deployed
+- [ ] Supabase Edge Functions deployed (`npx supabase functions deploy --project-ref jorjciajyaqzjuflxefv`)
+- [ ] `TANKERKOENIG_API_KEY` secret set in Supabase
 - [ ] Version number incremented in app.json
 - [ ] Run: `eas build --profile production --platform ios`
 - [ ] Run: `eas submit --platform ios --latest`
@@ -213,10 +242,13 @@ Before submitting to TestFlight:
 ## 10. Google Play Checklist
 
 Before submitting to Play Store:
-- [ ] Real `google-services.json` in place
-- [ ] Google Maps API key configured
+- [x] `eas.json` production env — Supabase URL + anon key embedded ✅
+- [ ] Real `google-services.json` in place (Firebase project for `com.luishustler.fuelradar`)
+- [ ] Google Maps API key set in app.json `android.config.googleMaps.apiKey`
 - [ ] `google-play-service-account.json` created
 - [ ] `eas.json` service account path filled in
+- [ ] Supabase Edge Functions deployed
+- [ ] `TANKERKOENIG_API_KEY` secret set in Supabase
 - [ ] Version incremented
 - [ ] Run: `eas build --profile production --platform android`
 - [ ] Run: `eas submit --platform android --latest`

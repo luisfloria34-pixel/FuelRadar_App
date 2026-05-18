@@ -1,9 +1,17 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { COLORS } from '../src/constants/theme';
 import { useNotifications, initAndroidChannels } from '../src/hooks/useNotifications';
+
+// Startup diagnostics — logs true/false only, never secret values
+console.log('[FuelRadar] env check', {
+  supabaseUrl: !!process.env.EXPO_PUBLIC_SUPABASE_URL,
+  supabaseKey: !!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+  apiUrl: !!process.env.EXPO_PUBLIC_API_URL,
+  platform: Platform.OS,
+});
 
 // Create Android notification channels as early as possible so local
 // notifications work immediately (Android 8+ requires channels to exist first).

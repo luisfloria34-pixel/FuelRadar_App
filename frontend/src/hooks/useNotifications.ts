@@ -75,16 +75,11 @@ export async function initAndroidChannels(): Promise<void> {
 // Modern Expo Go detection: appOwnership === 'expo' means running in Expo Go
 const isExpoGo = Constants.appOwnership === 'expo';
 
-const SKIP_MSG =
-  '[Notifications] Push token registration skipped: EXPO_PUBLIC_API_URL missing or unsupported environment';
-
 export async function registerForPushNotifications(
   deviceId: string,
   locale: string = 'de'
 ): Promise<string | null> {
   if (Platform.OS === 'web') return null;
-
-  const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
   // Expo Go on Android SDK 53+ cannot get remote push tokens
   if (isExpoGo && Platform.OS === 'android') {
@@ -120,15 +115,11 @@ export async function registerForPushNotifications(
 
   if (!token) return null;
 
-  if (!API_URL) {
-    console.warn(SKIP_MSG);
-    return token;
-  }
-
+  // Register device + push token via Supabase Edge Functions
   try {
     await fuelApi.registerDevice(deviceId, token, Platform.OS, locale);
   } catch (err) {
-    console.warn('[Notifications] Backend push token registration failed:', err);
+    console.warn('[Notifications] Device registration failed (non-fatal):', err);
   }
 
   return token;
