@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -16,12 +16,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Notifications from 'expo-notifications';
 import * as Haptics from 'expo-haptics';
 import { COLORS, SPACING, RADIUS, SHADOWS, TYPOGRAPHY } from '../../src/constants/theme';
 import { useStore } from '../../src/store/useStore';
 import { useTranslation } from '../../src/hooks/useTranslation';
-import { Alert as AlertType, FuelType } from '../../src/types';
+import { FuelType } from '../../src/types';
 import { Toast } from '../../src/components/Toast';
 import {
   getNotificationPermissionStatus,
@@ -94,25 +93,6 @@ export default function AlertsScreen() {
     // Success toast
     setToastMessage(t('alertCreated'));
     setToastVisible(true);
-
-    // Demo local notification for testing price alert UX
-    setTimeout(async () => {
-      try {
-        const { status } = await Notifications.getPermissionsAsync();
-        if (status === 'granted') {
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: t('demoNotifTitle'),
-              body: t('demoNotifBody'),
-              data: { type: 'price_alert', demo: true },
-            },
-            trigger: null,
-          });
-        }
-      } catch (err) {
-        console.warn('[Alerts] Demo notification skipped:', err);
-      }
-    }, 4000);
 
     // Prompt for notification permission if not yet granted
     if (permissionStatus !== 'granted') {

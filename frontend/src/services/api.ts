@@ -8,7 +8,7 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
 
 // ─── Exported flag so UI components can show "backend not configured" banners ──
 export const IS_BACKEND_CONFIGURED =
-  !!process.env.EXPO_PUBLIC_SUPABASE_URL && !!SUPABASE_ANON_KEY;
+  (!!process.env.EXPO_PUBLIC_SUPABASE_URL || !!process.env.EXPO_PUBLIC_API_URL) && !!SUPABASE_ANON_KEY;
 
 // ─── Query-string helper ───────────────────────────────────────────────────────
 
@@ -109,7 +109,7 @@ export const fuelApi = {
     edgeGet<any>('stations-prices', { ids: ids.join(',') }),
 
   getPriceHistory: (stationId: string, fuelType = 'diesel', days = 7): Promise<PriceHistoryEntry[]> =>
-    edgeGet('station-price-history', { station_id: stationId, fuel_type: fuelType, days }),
+    edgeGet('station-history', { station_id: stationId, fuel_type: fuelType, days }),
 
   healthCheck: () =>
     edgeGet<any>('health'),
@@ -179,8 +179,8 @@ export const fuelApi = {
 
   // ── Push token (separate edge function for explicit token updates) ────────
 
-  registerPushToken: (token: string, deviceId: string) =>
-    edgePost<any>('push-tokens', { token, device_id: deviceId }),
+  registerPushToken: (token: string, deviceId: string, platform?: string, locale?: string) =>
+    edgePost<any>('push-register', { token, device_uuid: deviceId, platform, locale }),
 
   // ── Analytics ────────────────────────────────────────────────────────────
 

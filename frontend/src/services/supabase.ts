@@ -12,7 +12,9 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder',
 );
 
-// Base URL for fetch-based Edge Function calls
-export const SUPABASE_FUNCTIONS_URL = supabaseUrl
-  ? `${supabaseUrl}/functions/v1`
-  : 'https://placeholder.supabase.co/functions/v1';
+// Base URL for fetch-based Edge Function calls.
+export const SUPABASE_FUNCTIONS_URL =
+  process.env.EXPO_PUBLIC_API_URL ||
+  (supabaseUrl
+    ? `${supabaseUrl}/functions/v1`
+    : 'https://placeholder.supabase.co/functions/v1');

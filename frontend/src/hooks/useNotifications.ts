@@ -118,6 +118,7 @@ export async function registerForPushNotifications(
   // Register device + push token via Supabase Edge Functions
   try {
     await fuelApi.registerDevice(deviceId, token, Platform.OS, locale);
+    await fuelApi.registerPushToken(token, deviceId, Platform.OS, locale);
   } catch (err) {
     console.warn('[Notifications] Device registration failed (non-fatal):', err);
   }
