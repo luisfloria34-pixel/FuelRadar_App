@@ -35,6 +35,7 @@ async function edgeFetch<T>(
   const timer = setTimeout(() => ctrl.abort(), 15_000);
 
   try {
+    console.log('[FuelRadar API]', { method, fn, url });
     const res = await fetch(url, {
       method,
       headers: {
@@ -48,6 +49,12 @@ async function edgeFetch<T>(
 
     if (!res.ok) {
       const text = await res.text().catch(() => '');
+      console.warn('[FuelRadar API] request failed', {
+        method,
+        fn,
+        status: res.status,
+        body: text.slice(0, 200),
+      });
       throw new Error(`HTTP ${res.status}${text ? ': ' + text.slice(0, 200) : ''}`);
     }
 

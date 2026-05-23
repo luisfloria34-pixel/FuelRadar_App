@@ -7,9 +7,9 @@ import { useNotifications, initAndroidChannels } from '../src/hooks/useNotificat
 
 // Startup diagnostics — logs true/false only, never secret values
 console.log('[FuelRadar] env check', {
-  supabaseUrl: !!process.env.EXPO_PUBLIC_SUPABASE_URL,
+  supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL || null,
   supabaseKey: !!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-  apiUrl: !!process.env.EXPO_PUBLIC_API_URL,
+  apiUrl: process.env.EXPO_PUBLIC_API_URL || null,
   platform: Platform.OS,
 });
 
