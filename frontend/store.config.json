@@ -1,0 +1,90 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "version": "1.0",
+    "copyright": "2026 Luis Floria",
+    "release": {
+      "automaticRelease": true
+    },
+    "info": {
+      "de-DE": {
+        "description": "Stop overpaying for fuel. FuelRadar shows you the cheapest petrol and diesel prices near you — live, updated every minute from thousands of stations across Germany.\n\nFIND THE CHEAPEST FUEL INSTANTLY\nSee every nearby station's current price for Super E5, Super E10, and Diesel. Sort by price or distance. Spot the best deal in seconds.\n\nLIVE MAP WITH REAL PRICES\nOur interactive map shows live price bubbles across your city. Filter by fuel type and search radius (2 km, 5 km, 10 km, or 25 km). With over 10,000 stations in Germany, you'll always find a cheaper option nearby.\n\nSMART PRICE ALERTS\nSet a target price for your favourite station or fuel type. FuelRadar notifies you the moment prices drop below your threshold — so you fill up at exactly the right time.\n\nLIVE RECOMMENDATIONS\nFuelRadar's algorithm analyses current prices in your area and surfaces the single best recommendation — the station offering the biggest saving right now. Updated constantly.\n\nGERMANY-WIDE COVERAGE\nData sourced directly from the Markttransparenzstelle für Kraftstoffe (MTS-K), the official German fuel price transparency system. Accurate. Real-time. Reliable.\n\nSIMPLE BY DESIGN\nDark, clean interface built for quick glances. No accounts required. No subscription. Just open and save.\n\nDownload FuelRadar and start saving on every fill-up.",
+        "keywords": [
+          "fuel prices",
+          "gas station",
+          "petrol",
+          "cheap fuel",
+          "fuel finder",
+          "diesel",
+          "benzin",
+          "tankstelle",
+          "sprit",
+          "MTS-K"
+        ],
+        "promoText": "Always know where to find the cheapest fuel. Live prices from 10,000+ stations across Germany — updated every minute.",
+        "title": "FuelRadar",
+        "subtitle": "Spritpreise in Echtzeit",
+        "screenshots": {
+          "APP_IPHONE_65": [
+            "store/apple/screenshot/de-DE/APP_IPHONE_65/FR_AS_03_alerts.png",
+            "store/apple/screenshot/de-DE/APP_IPHONE_65/FR_AS_01_home.png",
+            "store/apple/screenshot/de-DE/APP_IPHONE_65/FR_AS_02_map.png",
+            "store/apple/screenshot/de-DE/APP_IPHONE_65/FR_AS_04_vehicle.png",
+            "store/apple/screenshot/de-DE/APP_IPHONE_65/FR_AS_05_cta.png"
+          ],
+          "APP_IPAD_PRO_3GEN_129": [
+            "store/apple/screenshot/de-DE/APP_IPAD_PRO_3GEN_129/FR_AS_01_home.png",
+            "store/apple/screenshot/de-DE/APP_IPAD_PRO_3GEN_129/FR_AS_02_map.png",
+            "store/apple/screenshot/de-DE/APP_IPAD_PRO_3GEN_129/FR_AS_03_alerts.png",
+            "store/apple/screenshot/de-DE/APP_IPAD_PRO_3GEN_129/FR_AS_04_vehicle.png",
+            "store/apple/screenshot/de-DE/APP_IPAD_PRO_3GEN_129/FR_AS_05_cta.png"
+          ]
+        },
+        "supportUrl": "https://fuel-radar.online",
+        "marketingUrl": "https://fuel-radar.online",
+        "privacyPolicyUrl": "https://fuel-radar.online/datenschutz"
+      }
+    },
+    "categories": [
+      "NAVIGATION",
+      "UTILITIES"
+    ],
+    "advisory": {
+      "ageRatingOverride": "NONE",
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "contests": "NONE",
+      "gambling": false,
+      "gamblingSimulated": "NONE",
+      "horrorOrFearThemes": "NONE",
+      "kidsAgeBand": null,
+      "koreaAgeRatingOverride": "NONE",
+      "lootBox": false,
+      "matureOrSuggestiveThemes": "NONE",
+      "medicalOrTreatmentInformation": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "sexualContentGraphicAndNudity": "NONE",
+      "sexualContentOrNudity": "NONE",
+      "unrestrictedWebAccess": false,
+      "violenceCartoonOrFantasy": "NONE",
+      "violenceRealistic": "NONE",
+      "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+      "advertising": false,
+      "ageAssurance": false,
+      "ageRatingOverrideV2": "NONE",
+      "developerAgeRatingInfoUrl": null,
+      "gunsOrOtherWeapons": "NONE",
+      "healthOrWellnessTopics": false,
+      "messagingAndChat": false,
+      "parentalControls": false,
+      "userGeneratedContent": false
+    },
+    "review": {
+      "firstName": "Luis",
+      "lastName": "Floria",
+      "email": "natydesigner@outlook.com",
+      "phone": "+49 30 12345678",
+      "demoRequired": false,
+      "notes": "No login is required. Open the app and allow location permission or use the manual search to review fuel prices, map, favorites, and price alerts."
+    }
+  }
+}
