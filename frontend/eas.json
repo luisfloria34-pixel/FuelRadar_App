@@ -55,7 +55,8 @@
   "submit": {
     "production": {
       "ios": {
-        "appleId": "natydesigner@outlook.com"
+        "appleId": "natydesigner@outlook.com",
+        "ascAppId": "6768798013"
       },
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
